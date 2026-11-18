@@ -89,7 +89,9 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 - **needs validation:** state the exact unresolved fact.
 - **rejected:** dropped, and counted in the overview.
 
-The agent that found a finding never verifies it.
+The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier.
+
+At tier 3+, the verdict decides the marker: **needs validation** always shows `⚠️`, whatever the score. **Confirmed** never does.
 
 **K. Recon.** Before hunting, map the touched modules: what they own, where outside input enters, and which trust boundaries the change crosses.
 
@@ -115,7 +117,7 @@ The agent that found a finding never verifies it.
   - 3–4: weak. Shown only at tier 3, as `⚠️ Unverified`, after a fresh verifier failed to reject it.
   - Below 3: never report.
 - **Severity is likelihood × impact,** not "breaks a rule". A missing second safeguard is 🟡 hardening when the first one holds. Not everything is a blocker.
-- **Severity anchors:** 🟠 should fix includes tests that assert nothing, copy-pasted logic blocks, swallowed errors, and a missed requirement. "Coverage could be broader" and polish are 🟡.
+- **Severity anchors:** 🟠 should fix includes tests that assert nothing, copy-pasted logic blocks, swallowed errors, and a missed requirement. "Coverage could be broader" and polish are 🟡. Missing tests always go in the 🧪 Tests row. They are also a 🟡 finding only when the repo already has tests and this change adds untested behavior.
 - **A certain failure is 🔴,** even if it looks like unfinished work, such as a missing file that fails on load or code that throws on every call. Say "may be unfinished" in the text.
 - **Fixes:** if a change of 10 lines or less fixes it, give the exact current lines and their replacement.
 - **Praise:** one specific "Looks good" line. Accurate praise makes the rest easier to trust.

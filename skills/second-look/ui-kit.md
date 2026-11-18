@@ -79,7 +79,7 @@ Then:
 | 🧪 Tests | <✅ covered | 🟡 partly: <gap> | ❌ not covered: <gap>> |
 | 🗣️ Claims | <tier 2+, when the description or the user claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
 | 👥 Reviewers | <PR modes, when others reviewed: `@a` ⛔ changes requested · `@b` ✅ approved · `@c` 💬 commented · <n> open threads> |
-| 🎫 Ticket | <tier 3+: n met · n missing · n need a human> |
+| 🎫 Ticket | <tier 3+, only when a ticket or PR description exists: n met · n missing · n need a human> |
 | 🗺️ Coverage | <tier 4: n files × n categories checked · n rejected · n need validation> |
 
 | # | | Where | Issue | Conf. |
@@ -94,7 +94,7 @@ Then:
 
 Leave out the field table at tier 1, and any row that doesn't apply to the tier. At tier 3+, add after the table: **Failure modes** (a table: what · where · trigger · detected by), **Declined to judge** (one line each), and **Split suggestion** when it applies. At tier 4, also add **Needs validation** (finding · the exact open question) and **Evidence** (what was run and the result). When verification was single-agent, say so on the tier line.
 
-Number findings by severity: all 🔴 first, then 🟠, then 🟡. Within a severity, order by kind: security, then data loss, then crash or always-fails, then wrong result, then everything else. Break ties by the larger blast radius. Mark unverified findings with ⚠️ in the Conf. column only, never in the Issue text. The overview has no finding details. Those come one at a time in the walkthrough.
+Number findings by severity: all 🔴 first, then 🟠, then 🟡. Within a severity, order by kind: security, then data loss, then crash or always-fails, then wrong result, then everything else. Break ties by the earlier failure point (a crash on load comes before a crash on call), then by the larger blast radius. Mark unverified findings with ⚠️ in the Conf. column only, never in the Issue text. The overview has no finding details. Those come one at a time in the walkthrough.
 
 Pluralize counts correctly ("1 file", "2 files"). Untracked files count as changed files, and all their lines count as additions.
 
@@ -122,7 +122,7 @@ In the numbered form, a preview becomes one line after ` · `. Leave it out when
 
 Free text always works: reword a comment, ask a question, or type "undo". Answer, then show the same menu again.
 
-**Start menu** (after the overview):
+**Start menu** (after the overview). Title `Start`, question `How do you want to go through the <n> findings?`:
 Local, Self-review: `▶️ Walk through` · `🔧 Fix all now` · `🎚️ Change tier` · `👋 Done`
 PR review: `▶️ Walk through` · `🎚️ Change tier` · `🔒 Keep private`
 
