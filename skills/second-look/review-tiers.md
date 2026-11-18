@@ -1,17 +1,22 @@
 # Review tiers
 
-How findings are produced. `ui-kit.md` decides how they look. Each tier includes everything in the tiers below it.
+How findings are produced. The UI files (`ui-kit.md` plus the mode's file) decide how they look. Each tier includes everything in the tiers below it.
 
 ## Pick the tier
 
 | User says | Tier |
 |---|---|
 | "quick look", "skim", "scan", "tier 1" | **1 · Diff Scan**: sure bugs in the changed lines |
-| nothing specific, "review", "impact", "tier 2" | **2 · Impact Review** (default): + intent and claims, callers and other paths, tests, security checklists |
+| nothing specific, "review", "impact", "tier 2" | **2 · Impact Review** (default for 30–1,500 changed lines): + intent and claims, callers and other paths, tests, security checklists |
 | "thorough", "deep", "careful", "verify", "tier 3" | **3 · Verified Review**: + focused passes, failure modes, an independent check of each finding, variant search |
 | "audit", "security review", "before release", "tier 4" | **4 · Full Audit**: + module map, coverage checklist, parallel helper agents, a test run |
 
-Show the tier in the overview header. The Start menu's `🎚️ Change tier` lets the user switch to any tier (see **Tier menu** in `ui-kit.md`).
+If the user didn't name a tier, pick it by size, counting changed lines after skipping noise files (see A):
+- Under 30 lines: tier 1.
+- 30–1,500 lines: tier 2.
+- Over 1,500 lines: before reviewing, state the size and ask with a menu: `✂️ Suggest a split` (Recommended) · `🎚️ Tier 2 anyway` · `🎚️ Tier 1` · `👋 Cancel`.
+
+A tier the user named always wins. Show the tier in the overview header. The Start menu's `🎚️ Change tier` lets the user switch to any tier (see **Tier menu** in `ui-review.md`).
 
 ## What each tier does
 
@@ -36,7 +41,7 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 | Security gate on every security finding | ✔ | ✔ | ✔ | ✔ |
 | Helper agents, at most (see **Helper agent limits**) | 0¹ | 0¹ | 3 | 8 |
 
-¹ 1 if this session wrote the code under review. **Re-review** (below) is a separate flow for `🔍 Review new commits`.
+¹ 1 if this session wrote the code under review. **Re-review** (`review-advanced.md`) is a separate flow for `🔍 Review new commits`.
 
 **Which findings are shown** (confidence scale below):
 
@@ -59,6 +64,12 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 ## The steps
 
 **A. Scope.** Read the diff, the PR/MR description, and any linked issue or ticket. These state the intent. In Local mode there is usually no description. Requirements the user states in chat count as one. Otherwise, infer the intent from the branch name, recent commit messages, and the diff, and write "intent inferred" in the overview. If the diff is over ~1000 changed lines, review it in passes by area and say so in the overview.
+
+**Skip noise files.** Don't review generated or bulky files line by line. Count them on the header line as `<n> generated or asset files skipped`:
+- **Lockfiles** (`Package.resolved`, `Podfile.lock`, `package-lock.json`, `yarn.lock`, `Gemfile.lock`, …): only list added, removed, or upgraded dependencies, and run the supply-chain checklist on them.
+- **`project.pbxproj`:** only check files added to or removed from targets, and changed build settings (signing, entitlements, `Info.plist` path, App Transport Security, deployment target).
+- **Assets and binaries** (`.xcassets`, images, fonts, `.storyboard` and `.xib` layout noise): skip, except for new files that hold secrets or configuration.
+- **Generated, vendored, minified, or snapshot files** (`*.generated.*`, `Generated/`, `Pods/`, `vendor/`, `*.min.js`, `__Snapshots__/`): skip, unless the PR hand-edited them.
 
 **B. Context.** Never judge a hunk you only saw in the diff. Read the surrounding code at the depth the tier sets. Beyond that, read code outside the diff only to check a risk you can name (e.g. "does any caller still pass a sync handler?"). Do one focused check per named risk, and record it as `risk → what you read (file:line)`. Findings, the Looks good line, and Declined to judge cite these checks.
 
@@ -94,32 +105,7 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 
 **G. Self-check.** Before keeping a finding, re-read the code and try once to prove it wrong. Drop it if you can.
 
-**H. Category passes.** One focused pass per category that applies to the touched code: security (use the matching sections of `security-checklists.md`; deep specialist areas such as HTTP desync, memory safety, kernel, or cloud IAM get named in Declined to judge when touched, not hunted), performance, API and backward compatibility, error handling, maintainability (duplication, premature abstraction, YAGNI), structure (each file has one clear job; did this change create a very large new file or grow an existing one a lot? Judge only what this change added), and docs.
-
-**I. Failure modes.** For each risky change: what fails, where (`file:function`), the realistic trigger, and what would detect it (a named test or signal, or "nothing"). Note whether this PR covers it. Always ask about the default posture: what happens when config is missing, a flag is off, a dependency is down, crypto or a certificate fails, or a migration is half done? A path that fails open is a finding.
-
-**J. Fresh verifier.** Give each finding to a fresh agent that tries to disprove it. Pass the review package and the finding, never your reasoning. The verdict is one of:
-- **confirmed:** the trace is complete.
-- **needs validation:** state the exact unresolved fact.
-- **rejected:** dropped, and counted in the overview.
-
-The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier, within the caps in **Helper agent limits**.
-
-**Variants.** After a strong finding is confirmed, search for the same root cause by name, by structure, and by logic: within the diff at tier 3, across the touched modules at tier 4. One root cause with many entry points is one finding listing them all. Separate missing controls are separate findings. Apply the same rule to remove duplicates in hunter reports (M) before verifying.
-
-If a verifier confirms part of a finding and leaves the rest open, split it into two cards: the confirmed part, and a `⚠️` card for the open part.
-
-At tier 3+, the verdict decides the marker: **needs validation** always shows `⚠️`, whatever the score. **Confirmed** never does.
-
-**K. Recon.** Before hunting, map the touched modules: what they own, where outside input enters, and which trust boundaries the change crosses.
-
-**L. Coverage ledger.** List every changed file against every category from H, and mark each cell checked, not applicable, or not done. A critic pass then looks for gaps. Fill the gaps before reporting.
-
-**M. Parallel hunters.** Split the ledger by area and give each area to its own fresh agent, within the caps in **Helper agent limits**.
-
-**N. Second verifier.** A different fresh agent re-checks every final `file:line` claim and quoted line against the files.
-
-**O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Run in a clean environment: no real credentials or tokens, no network where possible, and time and memory limits. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
+**H–O** (tier 3–4 only) are in `review-advanced.md`.
 
 ## Helper agent limits
 
@@ -142,6 +128,10 @@ Hard caps on helper agents per review. Never go over them, even if the user says
 
 ## Rules for every tier
 
+- **Fetch and read in parallel.** Run independent steps together: the host fetches (PR, diff, threads, reviews) in one batch, independent file reads together, and all verifiers at once.
+- **Read each file once.** Keep short notes (`file:line → fact`) and reuse them. Re-read only if the file changed or a note doesn't answer the question.
+- **Smaller model for helpers.** If the CLI lets you choose a model for helper agents, use a smaller, faster one for verifiers (J, N) and re-checks. Keep the main model for area hunters (M) and for reviewing self-authored code.
+
 - **Read-only.** Never change the checkout while reviewing. To see another revision, use a separate worktree in a temp directory.
 - **Fresh agents:** if the CLI can start subagents, use them for J, M, and N. If it can't, do those steps as separate passes: re-read the code from scratch, argue the opposite case, and say in the overview that verification was single-agent.
 - **Don't review your own code.** If this session wrote or edited the code under review (e.g. you implemented it earlier in the conversation), run steps C–I in a fresh agent that gets only the review package. You then only verify, filter, and present. This applies at every tier. Without subagents, do it as a separate pass and put `self-authored · single-agent` on the tier line.
@@ -162,13 +152,6 @@ Hard caps on helper agents per review. Never go over them, even if the user says
 - **Fixes:** if a change of 10 lines or less fixes it, give the exact current lines and their replacement.
 - **Praise:** one specific "Looks good" line. Accurate praise makes the rest easier to trust.
 - **Declined to judge** (tier 3+): list anything you considered and set aside, one line each with the reason, so nothing is dropped silently. The user has the final say: if they name a declined item, it becomes a finding with a card.
-
-## Re-review
-
-Used for `🔍 Review new commits` in Discussion, and whenever earlier findings meet new code. It is not a fresh review:
-1. **Each earlier finding gets a verdict**, in order: ✅ addressed or ❌ not addressed, with `file:line` evidence. "Attempted" is not addressed: the specific defect must no longer be reachable. A partial fix is ❌, with what is still reachable.
-2. **New breakage:** problems the fix itself introduced, at the usual severities.
-3. **Out of scope:** anything noticed outside the fix diff is listed as non-blocking, never as a new finding round.
 
 ## Overview fields
 

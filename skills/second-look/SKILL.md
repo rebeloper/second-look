@@ -7,7 +7,7 @@ description: Use when the user asks to review code, including local uncommitted 
 
 Code review in chat that looks and feels like a GUI. Four modes, one visual language.
 
-**REQUIRED:** Read `review-tiers.md` before reviewing, and `ui-kit.md` before writing any output. Read `security-checklists.md` sections only when the diff touches their area. Every screen you print is one of its templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**). Local mode needs no host: skip host detection.
+**REQUIRED:** Read `review-tiers.md` before reviewing, and `review-advanced.md` only at tier 3–4 or for a Re-review. Before writing any output, read `ui-kit.md`, plus `ui-review.md` for Local, PR review, and Self-review, or `ui-discussion.md` for Discussion. Don't read the other mode's file. Read `security-checklists.md` sections only when the diff touches their area. Every screen you print is one of the UI files' templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**). Local mode needs no host: skip host detection.
 
 ## Host
 
@@ -37,7 +37,7 @@ Show the pick and the reason on one line under the header, e.g. `🧭 Their PR �
 ## Local
 
 1. Collect: `git status --short`, `git diff HEAD`, untracked files (`git ls-files --others --exclude-standard`, read them). In a repo with no commits yet (`git rev-parse --verify HEAD` fails), use `git diff --cached` plus the untracked files instead. If the user asks for the whole repo, diff from the empty tree: `git diff $(git hash-object -t tree /dev/null) HEAD`. For a branch: `git diff <base>...HEAD`, where `<base>` is the one the user named, otherwise `git symbolic-ref --short refs/remotes/origin/HEAD`, otherwise `main`.
-2. Review at the chosen tier (`review-tiers.md`, default 2).
+2. Review at the chosen tier (`review-tiers.md`; without one, the tier is picked by size).
 3. Print the **Overview**, then the **Start menu**. If the user changes the tier there, re-review and show the new overview.
 4. Walk through the findings: show one **Finding card** with its **Finding menu**, apply the fix if the user picks it, then move to the next card.
 5. Show a **Done card**.
@@ -45,7 +45,7 @@ Show the pick and the reason on one line under the header, e.g. `🧭 Their PR �
 ## PR review
 
 1. Read the PR/MR and its diff (host file). Do not check out the branch unless the user asks.
-2. Review at the chosen tier (`review-tiers.md`, default 2). Print the **PR header**, the **Overview**, and the **Start menu**. If the user changes the tier there, re-review and show the new overview.
+2. Review at the chosen tier (`review-tiers.md`; without one, the tier is picked by size). Print the **PR header**, the **Overview**, and the **Start menu**. If the user changes the tier there, re-review and show the new overview.
 3. Walk through the findings one **Finding card** at a time. Each pick in the **Finding menu** takes effect immediately: the comment is posted, copied, or dropped.
    - **Other reviewers:** read the existing threads and reviews first (host file, **Read threads** and **Reviews**). If a finding was already raised in an open thread, mark the card `👥 already raised by @x`, and the menu offers `👍 Agree in their thread` instead of `📤 Post`. Never post a duplicate.
 4. Show the **Finish menu** to submit the overall verdict, then a **Done card**.
@@ -65,7 +65,7 @@ Replying to PR/MR conversations that wait on the user, from either side. The rol
 |---|---|---|
 | Waiting on the user | open threads from others where the last word isn't the user's | threads the user started or joined where someone replied after them, plus threads that @mention them |
 | Take | ✅ valid · 🤔 partly · ❌ disagree | ✅ addressed · 🤔 partly · ❌ not addressed |
-| Menu | see **Thread action bar** in `ui-kit.md` | see **Thread action bar** in `ui-kit.md` |
+| Menu | see **Thread action bar** in `ui-discussion.md` | see **Thread action bar** in `ui-discussion.md` |
 
 1. Fetch the threads (host file). Keep only the ones waiting on the user, unless they ask for all of them.
 2. Print the **Inbox**. Blocking threads come first.
@@ -81,13 +81,13 @@ Replying to PR/MR conversations that wait on the user, from either side. The rol
    - On `💾 Keep local`, save the queue to `$(git rev-parse --git-dir)/second-look/queue.json` (inside git's own folder, so never committed, and correct in worktrees). The next Discussion session on this PR starts by offering to send it.
 5. **Reviewer:** replies and resolves post as soon as they're picked.
 6. **Same ask, several threads** (author): fix it once with one commit, then queue a reply in each thread linking that commit. **Contradicting asks:** mark both threads ⚔️ and show both on one card, so the reply can address both reviewers.
-7. **Reviewer, at the end:** if the author pushed commits after the user's last review, offer `🔍 Review new commits`: a **Re-review** (`review-tiers.md`) of just those commits (host file, **New commits since me**), with a verdict on each of the user's earlier findings, then the **Finish menu** to update the verdict.
+7. **Reviewer, at the end:** if the author pushed commits after the user's last review, offer `🔍 Review new commits`: a **Re-review** (`review-advanced.md`) of just those commits (host file, **New commits since me**), with a verdict on each of the user's earlier findings, then the **Finish menu** to update the verdict.
 8. Show a **Done card**: replied, resolved, fixed, committed, pushed, skipped.
 
 ## Rules
 
 - Nothing reaches the host until the user picks Post or Reply on a card that shows the exact text. Posting is public, and "undo" removes the last post.
-- Every finding has `file:line`, checked against the real file.
+- Every finding has `file:line`, checked against the real file. For a removed line, cite the old side: `<file>:<old line> (removed)`.
 - Severity is one of: 🔴 Blocker, 🟠 Should fix, 🟡 Nit. Do not invent others.
 - Posted and copied comments follow Conventional Comments (`issue (blocking): ...`, `nitpick (non-blocking): ...`). See **Comment labels** in `ui-kit.md`.
 - Give fixes as `diff` blocks with the smallest change that works.
