@@ -48,12 +48,12 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 |---|---|---|---|---|
 | Verdict, risk | ✔ | ✔ | ✔ | ✔ |
 | Effort, merge danger, impact, tests | | ✔ | ✔ | ✔ |
-| What it does (visual), ticket check, failure modes, declined to judge, split suggestion | | | ✔ | ✔ |
+| What it does (visual), ticket check, failure modes, approach, recommendations, declined to judge, split suggestion | | | ✔ | ✔ |
 | Coverage, needs validation, evidence | | | | ✔ |
 
 ## The steps
 
-**A. Scope.** Read the diff, the PR/MR description, and any linked issue or ticket. These state the intent. In Local mode there is usually no description: infer the intent from the branch name, recent commit messages, and the diff, and write "intent inferred" in the overview. If the diff is over ~1000 changed lines, review it in passes by area and say so in the overview.
+**A. Scope.** Read the diff, the PR/MR description, and any linked issue or ticket. These state the intent. In Local mode there is usually no description. Requirements the user states in chat count as one. Otherwise, infer the intent from the branch name, recent commit messages, and the diff, and write "intent inferred" in the overview. If the diff is over ~1000 changed lines, review it in passes by area and say so in the overview.
 
 **B. Context.** Never judge a hunk you only saw in the diff. Read the surrounding code at the depth the tier sets. Beyond that, read code outside the diff only to check a risk you can name (e.g. "does any caller still pass a sync handler?"). Do one focused check per named risk, and record it as `risk → what you read (file:line)`. Findings, the Looks good line, and Declined to judge cite these checks.
 
@@ -61,6 +61,7 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 - Logic: off-by-one, inverted condition, wrong operator, unreachable branch.
 - Nil and optionals: force unwraps, missing guards, empty collections.
 - Errors: swallowed errors, `try?` hiding failures, missing failure path.
+- Types: unsafe casts (`as!`, `any`, force-typed JSON), and unchecked decoding of outside data.
 - Concurrency: races, wrong thread or actor for UI, retain cycles, missing cancellation.
 - Resources: leaks, unclosed handles, timers and observers never removed.
 - Security basics: injection, secrets in code, missing auth check, unsafe deserialization.
@@ -72,11 +73,15 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 - **Extra:** features nobody asked for, over-engineering, unrequested "nice to haves".
 - **Misunderstood:** the right feature built the wrong way, or the wrong problem solved.
 
-Treat the PR description, commit messages, and the author's claims ("tested on device", "no behavior change", "kept it simple on purpose") as unverified. Check them against the code. A stated reason never lowers a severity. If the ticket or description asks for something this checklist calls a defect, it's still a finding, labeled `as requested`, and the user decides. Where the description says nothing, judge by what a reasonable user of the software would expect: silence is not permission. If a requirement can't be checked from the diff (it lives in unchanged code), list it as `⚠️ can't verify from the diff` instead of widening the search. That marker is only for requirements and claims. A finding that rests on something missing or unseen keeps a confidence score and uses `⚠️ Unverified`. Report every claim's result in the overview's 🗣️ Claims row.
+Treat the PR description, commit messages, and the author's claims ("tested on device", "no behavior change", "kept it simple on purpose") as unverified. Check them against the code. A stated reason never lowers a severity. If the ticket or description asks for something this checklist calls a defect, it's still a finding, labeled `as requested`, and the user decides. Where the description says nothing, judge by what a reasonable user of the software would expect: silence is not permission.
+
+**Deviations.** When the code departs from what was asked, decide whether the change is an improvement or a mistake. If it might be intentional, the posted comment is a `question` ("Was dropping X intentional?"), not an `issue`, so the author can confirm.
+
+**Approach.** If the code matches the request but the approach itself is wrong (e.g. polling where a push or notification belongs), write a separate **Approach** note in the overview, labeled `thought` or `suggestion`. Never mix it into the line findings. If a requirement can't be checked from the diff (it lives in unchanged code), list it as `⚠️ can't verify from the diff` instead of widening the search. That marker is only for requirements and claims. A finding that rests on something missing or unseen keeps a confidence score and uses `⚠️ Unverified`. Report every claim's result in the overview's 🗣️ Claims row.
 
 **E. Impact.** For every changed signature, type, protocol, public API, config key, or schema, search the codebase for its uses. Flag uses the PR didn't update, files it depends on that don't exist, and broken backward compatibility. For iOS, also check protocol conformers, `public` and `open` API, `@MainActor` and `Sendable` changes, `Codable` keys, and SwiftUI initializers.
 
-**F. Tests.** Is each new or changed behavior covered by a test that checks real behavior rather than a mock? Name the untested path. Never claim a test passed unless you ran it. Test and CI output must be clean: new warnings, flaky retries, and newly skipped tests are findings. If a log is truncated or missing, say "couldn't see it". Never read a missing log as a pass.
+**F. Tests.** Is each new or changed behavior covered by a test that checks real behavior rather than a mock? Name the untested path. When the change crosses a boundary (network, database, storage, another process), ask whether an integration test covers it, not only unit tests. Never claim a test passed unless you ran it. Test and CI output must be clean: new warnings, flaky retries, and newly skipped tests are findings. If a log is truncated or missing, say "couldn't see it". Never read a missing log as a pass.
 
 **G. Self-check.** Before keeping a finding, re-read the code and try once to prove it wrong. Drop it if you can.
 
@@ -84,12 +89,14 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 
 **I. Failure modes.** For each risky change: what fails, where (`file:function`), the realistic trigger, and what would detect it (a named test or signal, or "nothing"). Note whether this PR covers it.
 
-**J. Fresh verifier.** Give each finding to a fresh agent that tries to disprove it. Pass only the diff, the file paths, and the finding, never your reasoning. The verdict is one of:
+**J. Fresh verifier.** Give each finding to a fresh agent that tries to disprove it. Pass the review package and the finding, never your reasoning. The verdict is one of:
 - **confirmed:** the trace is complete.
 - **needs validation:** state the exact unresolved fact.
 - **rejected:** dropped, and counted in the overview.
 
 The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier, within the caps in **Helper agent limits**.
+
+If a verifier confirms part of a finding and leaves the rest open, split it into two cards: the confirmed part, and a `⚠️` card for the open part.
 
 At tier 3+, the verdict decides the marker: **needs validation** always shows `⚠️`, whatever the score. **Confirmed** never does.
 
@@ -135,12 +142,12 @@ Hard caps on helper agents per review. Never go over them, even if the user says
   - 5–6: plausible but unverified.
   - 3–4: weak. Shown only at tier 3, as `⚠️ Unverified`, after a fresh verifier failed to reject it.
   - Below 3: never report.
-- **Severity is likelihood × impact,** not "breaks a rule". A missing second safeguard is 🟡 hardening when the first one holds. Not everything is a blocker.
+- **Severity is likelihood × impact,** judged by the effect on a real user of the software, whether or not the spec mentions the case. Not "breaks a rule". A missing second safeguard is 🟡 hardening when the first one holds. Not everything is a blocker.
 - **Severity anchors:** 🟠 should fix includes tests that assert nothing, copy-pasted logic blocks, swallowed errors, and a missed requirement. "Coverage could be broader" and polish are 🟡. Missing tests always go in the 🧪 Tests row. They are also a 🟡 finding only when the repo already has tests and this change adds untested behavior.
 - **A certain failure is 🔴,** even if it looks like unfinished work, such as a missing file that fails on load or code that throws on every call. Say "may be unfinished" in the text.
 - **Fixes:** if a change of 10 lines or less fixes it, give the exact current lines and their replacement.
 - **Praise:** one specific "Looks good" line. Accurate praise makes the rest easier to trust.
-- **Declined to judge** (tier 3+): list anything you considered and set aside, one line each with the reason, so nothing is dropped silently.
+- **Declined to judge** (tier 3+): list anything you considered and set aside, one line each with the reason, so nothing is dropped silently. The user has the final say: if they name a declined item, it becomes a finding with a card.
 
 ## Re-review
 
@@ -161,3 +168,5 @@ Used for `🔍 Review new commits` in Discussion, and whenever earlier findings 
 - **What it does:** the smallest visual that shows the change: a call tree, component tree, or file tree, drawn as a `diff` sketch.
 - **Ticket check:** requirements met, not met, and needing a human (e.g. "check on device").
 - **Split suggestion:** only when the PR mixes unrelated changes. Name the parts.
+- **Approach** (tier 3+): only when the approach itself is the problem (see D). One short paragraph.
+- **Recommendations** (tier 3+): up to 3 non-blocking improvements that aren't line findings (architecture, process, follow-up work). The user can add them to the review summary.

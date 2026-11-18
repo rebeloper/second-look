@@ -28,7 +28,7 @@ Every comment and reply that gets posted or copied starts with a label line in t
 | 🔴 Blocker | `issue (blocking)`, or `todo (blocking)` for a small required chore |
 | 🟠 Should fix | `issue (non-blocking)` for a defect, `suggestion (non-blocking)` for an improvement |
 | 🟡 Nit | `nitpick (non-blocking)` |
-| Something you need answered | `question` |
+| Something you need answered, or a deviation that may be intentional | `question` |
 | Something done well | `praise`. Post at most one, and only if it's specific. |
 
 Other labels can be used when they fit: `thought` for an idea that isn't a request, `chore` for process work such as a changelog entry, and `note` for information with no action needed. A small fix can take the `(if-minor)` decoration, meaning "fix it only if it's quick".
@@ -57,6 +57,7 @@ Local mode replaces the PR header with this header line:
 
 ```
 ## 🔍 Local changes · `<branch>`
+🧭 <reason> → Local
 <n> file(s) · +<add> −<del> · <uncommitted | staged | vs `<base>`> <· intent inferred, when there's no description>
 ```
 
@@ -79,7 +80,7 @@ Then:
 | 🧪 Tests | <✅ covered | 🟡 partly: <gap> | ❌ not covered: <gap>> |
 | 🗣️ Claims | <tier 2+, when the description or the user claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
 | 👥 Reviewers | <PR modes, when others reviewed: `@a` ⛔ changes requested · `@b` ✅ approved · `@c` 💬 commented · <n> open threads> |
-| 🎫 Ticket | <tier 3+, only when a ticket or PR description exists: n met · n missing · n need a human> |
+| 🎫 Ticket | <tier 3+, when a ticket, PR description, or requirements the user stated in chat exist: n met · n met but broken · n missing · n need a human> |
 | 🗺️ Coverage | <tier 4: n files × n categories checked · n rejected · n need validation> |
 
 | # | | Where | Issue | Conf. |
@@ -92,9 +93,9 @@ Then:
 **Looks good:** <one specific line on what is solid>
 ````
 
-Leave out the field table at tier 1, and any row that doesn't apply to the tier. At tier 3+, add after the table: **Failure modes** (a table: what · where · trigger · detected by), **Declined to judge** (one line each), and **Split suggestion** when it applies. At tier 4, also add **Needs validation** (finding · the exact open question) and **Evidence** (what was run and the result). When verification was single-agent, say so on the tier line.
+Leave out the field table at tier 1, and any row that doesn't apply to the tier. At tier 3+, add after the table: **Failure modes** (a table: what · where · trigger · detected by), **Approach** when it applies, **Recommendations** (up to 3 bullets), **Declined to judge** (one line each, ending with `Name one to make it a finding.`), and **Split suggestion** when it applies. At tier 4, also add **Needs validation** (finding · the exact open question) and **Evidence** (what was run and the result). When verification was single-agent, say so on the tier line.
 
-Number findings by severity: all 🔴 first, then 🟠, then 🟡. Within a severity, order by kind: security, then data loss, then crash or always-fails, then wrong result, then everything else. Break ties by the earlier failure point (a crash on load comes before a crash on call), then by the larger blast radius. Mark unverified findings with ⚠️ in the Conf. column only, never in the Issue text. The overview has no finding details. Those come one at a time in the walkthrough.
+Number findings by severity: all 🔴 first, then 🟠, then 🟡. Within a severity, order by kind: security, then data loss, then crash or always-fails, then wrong result or a breaking API change, then a missed requirement, then everything else. Break ties by the earlier failure point (a crash on load comes before a crash on call), then by the larger blast radius. Mark unverified findings with ⚠️ in the Conf. column only, never in the Issue text. The overview has no finding details. Those come one at a time in the walkthrough.
 
 Pluralize counts correctly ("1 file", "2 files"). Untracked files count as changed files, and all their lines count as additions.
 
