@@ -79,6 +79,17 @@ Say "quick look", "thorough review", or "audit", or switch tiers from the start 
 ## Install
 
 ```bash
+npx skills add rebeloper/second-look -g
+```
+
+This uses the open [skills](https://skills.sh) installer, which supports Claude Code, Codex, Cursor, and many more. It asks which agents to install for. Pick them up front with `-a`, e.g. `-a claude-code`. Leave out `-g` to install into the current project only.
+
+Update with `npx skills update second-look`, and remove with `npx skills remove second-look`.
+
+<details>
+<summary>Manual install</summary>
+
+```bash
 git clone https://github.com/rebeloper/second-look.git
 cd second-look
 ```
@@ -87,11 +98,13 @@ Link the skill folder into your CLI's skills directory:
 
 | CLI | Command |
 |---|---|
-| Claude Code | `ln -s "$PWD/second-look" ~/.claude/skills/second-look` |
-| GitHub Copilot CLI | `ln -s "$PWD/second-look" ~/.copilot/skills/second-look` |
-| CLIs that read `~/.agents/skills` | `ln -s "$PWD/second-look" ~/.agents/skills/second-look` |
+| Claude Code | `ln -s "$PWD/skills/second-look" ~/.claude/skills/second-look` |
+| GitHub Copilot CLI | `ln -s "$PWD/skills/second-look" ~/.copilot/skills/second-look` |
+| CLIs that read `~/.agents/skills` | `ln -s "$PWD/skills/second-look" ~/.agents/skills/second-look` |
 
 Pull the repo to update.
+
+</details>
 
 ### Requirements
 
