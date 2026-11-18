@@ -57,13 +57,14 @@ Local mode replaces the PR header with this header line:
 
 ```
 ## 🔍 Local changes · `<branch>`
-<n> file(s) · +<add> −<del> · <uncommitted | staged | vs `<base>`>
+<n> file(s) · +<add> −<del> · <uncommitted | staged | vs `<base>`> <· intent inferred, when there's no description>
 ```
 
 Then:
 
 ````
 > <⛔ **Not ready** | ⚠️ **Fix first** | ✅ **Ready**>: <n> blockers · <n> should fix · <n> nits
+> <1–2 sentences: why this verdict>
 🎚️ Tier <n> · <Diff Scan | Impact Review | Verified Review | Full Audit> · 🌡️ Risk <low | medium | high> <tier 2+: · ⏱️ Effort <1-5>/5>
 
 <tier 3+: **What it does**
@@ -76,6 +77,7 @@ Then:
 | 🚪 Merge danger | <one-way | two-way> door · blast radius: <1-2 words> |
 | 🧭 Impact | `<symbol>` <change> · <n> uses · <⚠️ n not updated | ✅ all updated | ⚠️ exported, outside callers unknown (when 0 uses in the repo)> |
 | 🧪 Tests | <✅ covered | 🟡 partly: <gap> | ❌ not covered: <gap>> |
+| 🗣️ Claims | <tier 2+, when the description or the user claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
 | 👥 Reviewers | <PR modes, when others reviewed: `@a` ⛔ changes requested · `@b` ✅ approved · `@c` 💬 commented · <n> open threads> |
 | 🎫 Ticket | <tier 3+: n met · n missing · n need a human> |
 | 🗺️ Coverage | <tier 4: n files × n categories checked · n rejected · n need validation> |
@@ -142,7 +144,7 @@ The `🎚️ Change tier` preview shows the current tier. Picking it opens the *
 
 In all three cases, print the new overview and the Start menu again.
 
-`Fix all now` skips the walkthrough.
+`Fix all now` skips the walkthrough. If any fix needs facts only the user has (e.g. where a missing module lives), ask for all of them in one question first. Fixes the user can't answer for are skipped and listed on the Done card.
 
 ## Code view
 
@@ -293,7 +295,7 @@ A menu (see **Menus**). Each preview shows exactly what will happen (the reply t
 Author: `🔧 Fix + reply + resolve` · `💬 Reply` · `📋 Copy reply` · `⏭️ Skip`
 Reviewer: `✔️ Accept + resolve` · `💬 Reply` · `📋 Copy reply` · `⏭️ Skip`
 
-Recommend Fix when the author's take is valid, and Accept when the reviewer's take is addressed. Otherwise recommend Reply. As a reviewer, Accept posts a short reply (e.g. "Looks good now, thanks.") only if the user keeps the draft. They can clear it to resolve silently.
+Recommend Fix when the author's take is valid, and Accept when the reviewer's take is addressed. Otherwise recommend Reply. As a reviewer, ✅ addressed means the defect can no longer happen. "Attempted" doesn't count, and 🤔 partly is treated as not addressed: never recommend Accept for it. As a reviewer, Accept posts a short reply (e.g. "Looks good now, thanks.") only if the user keeps the draft. They can clear it to resolve silently.
 
 Reviewer: act on the pick right away. Replies and resolves post immediately, followed by `✔️ Replied <file>:<line> · <url>`.
 Author: a fix commits right away, followed by `✔️ Committed <sha7> · fix: <title>`. The reply is queued (`🕓 Queued reply · <file>:<line>`) and posts after the push, from the **Send screen**. Copy reply follows **Copy line**. With free text, the user can rewrite the reply (use their wording as given), say "resolve only", or say "undo".

@@ -7,7 +7,7 @@ description: Use when the user asks to review code, including local uncommitted 
 
 Code review in chat that looks and feels like a GUI. Four modes, one visual language.
 
-**REQUIRED:** Read `review-tiers.md` before reviewing, and `ui-kit.md` before writing any output. Every screen you print is one of its templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**).
+**REQUIRED:** Read `review-tiers.md` before reviewing, and `ui-kit.md` before writing any output. Every screen you print is one of its templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**). Local mode needs no host: skip host detection.
 
 ## Host
 
@@ -81,7 +81,7 @@ Replying to PR/MR conversations that wait on the user, from either side. The rol
    - On `💾 Keep local`, save the queue to `$(git rev-parse --git-dir)/second-look/queue.json` (inside git's own folder, so never committed, and correct in worktrees). The next Discussion session on this PR starts by offering to send it.
 5. **Reviewer:** replies and resolves post as soon as they're picked.
 6. **Same ask, several threads** (author): fix it once with one commit, then queue a reply in each thread linking that commit. **Contradicting asks:** mark both threads ⚔️ and show both on one card, so the reply can address both reviewers.
-7. **Reviewer, at the end:** if the author pushed commits after the user's last review, offer `🔍 Review new commits` (PR review on just those commits, host file **New commits since me**), then the **Finish menu** to update the verdict.
+7. **Reviewer, at the end:** if the author pushed commits after the user's last review, offer `🔍 Review new commits`: a **Re-review** (`review-tiers.md`) of just those commits (host file, **New commits since me**), with a verdict on each of the user's earlier findings, then the **Finish menu** to update the verdict.
 8. Show a **Done card**: replied, resolved, fixed, committed, pushed, skipped.
 
 ## Rules
