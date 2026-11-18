@@ -121,5 +121,3 @@ The agent that found a finding never verifies it.
 - **What it does:** the smallest visual that shows the change: a call tree, component tree, or file tree, drawn as a `diff` sketch.
 - **Ticket check:** requirements met, not met, and needing a human (e.g. "check on device").
 - **Split suggestion:** only when the PR mixes unrelated changes. Name the parts.
-
-Ideas drawn from: Claude Code's built-in code review, Cloudflare security-audit-skill, PR-Agent, Matt Pocock's `pr` skill, and superpowers' code review skills.
