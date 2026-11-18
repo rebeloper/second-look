@@ -10,11 +10,12 @@ Bitbucket has no official CLI, so these calls go through `curl`. This file cover
   export BITBUCKET_API_TOKEN=<token>
   ```
   If either variable is missing, stop and ask for it.
-- **Never print, log, or echo the token.**
+- **Never print, log, or echo the token.** The helper passes it to curl on stdin (`-K -`) through the shell's built-in `printf`, so it never appears in the process list.
 - **Base URL:** `BB=https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests/<N>`. Read `<workspace>/<repo>` from the remote URL or the PR URL.
 - **Request helper:**
   ```bash
-  bb() { curl -sS --fail-with-body -u "$BITBUCKET_EMAIL:$BITBUCKET_API_TOKEN" -H 'Content-Type: application/json' "$@"; }
+  bb() { printf 'user = "%s:%s"\n' "$BITBUCKET_EMAIL" "$BITBUCKET_API_TOKEN" \
+           | curl -sS --fail-with-body -K - -H 'Content-Type: application/json' "$@"; }
   ```
 - **Bodies:** build each JSON body in a temp file with `python3 -c 'import json,sys; ...'` or `jq`, and send it with `--data @file`. Never splice text into JSON by hand.
 

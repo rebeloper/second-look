@@ -36,7 +36,7 @@ Show the pick and the reason on one line under the header, e.g. `🧭 Their PR �
 
 ## Local
 
-1. Collect: `git status --short`, `git diff HEAD`, untracked files (`git ls-files --others --exclude-standard`, read them). For a branch: `git diff <base>...HEAD`, where `<base>` is the one the user named, otherwise `git symbolic-ref --short refs/remotes/origin/HEAD`, otherwise `main`.
+1. Collect: `git status --short`, `git diff HEAD`, untracked files (`git ls-files --others --exclude-standard`, read them). In a repo with no commits yet (`git rev-parse --verify HEAD` fails), use `git diff --cached` plus the untracked files instead. If the user asks for the whole repo, diff from the empty tree: `git diff $(git hash-object -t tree /dev/null) HEAD`. For a branch: `git diff <base>...HEAD`, where `<base>` is the one the user named, otherwise `git symbolic-ref --short refs/remotes/origin/HEAD`, otherwise `main`.
 2. Review at the chosen tier (`review-tiers.md`, default 2).
 3. Print the **Overview**, then the **Start menu**. If the user changes the tier there, re-review and show the new overview.
 4. Walk through the findings: show one **Finding card** with its **Finding menu**, apply the fix if the user picks it, then move to the next card.
@@ -55,7 +55,7 @@ Show the pick and the reason on one line under the header, e.g. `🧭 Their PR �
 The user's own PR before anyone reviews it. Follow **PR review**, with these changes:
 - The Finding menu is the Local one: 🔧 Fix · ⏭️ Skip · ⏹️ Stop here.
 - Fixes go to the working tree, and only if the current branch is the PR's head branch. Otherwise, ask before checking it out.
-- There is no Finish menu and nothing is posted. The Done card ends with: "Changes are uncommitted. Push when ready."
+- There is no Finish menu and nothing is posted. The Done card ends with: "Changes are uncommitted. Commit and push when ready."
 
 ## Discussion
 
@@ -73,12 +73,12 @@ Replying to PR/MR conversations that wait on the user, from either side. The rol
    - **Author:** check the comment against the code. Never agree because a reviewer said so, and never push back without a technical reason. If a comment is unclear, the draft reply asks a question.
    - **Reviewer:** check whether their reply or new commits actually address your point. Show what changed on that line since your comment.
 4. **Author: commit per fix, send after the push.**
-   - Before the first fix, check that the current branch is the PR's head branch. If it isn't, ask before switching. If the tree has uncommitted changes, ask whether to stash them, because they must never be mixed into fix commits.
+   - Before the first fix, check that the current branch is the PR's head branch. If it isn't, ask before switching. If the tree has uncommitted changes, ask whether to stash them, because they must never be mixed into fix commits. If the user agrees, run `git stash push -u -m "second-look: <PR>"` and remember it. At the end (after Push & send, Keep local, or Stop), run `git stash pop` for that entry and say so on the Done card. If the pop conflicts, stop and show the conflict without resolving it yourself.
    - 🔧 Fix applies the change and makes one commit with only the files that fix touched. The commit message is `fix: <short title>`, followed by a blank line and `Review: <thread url>`. If a commit hook fails, show its output and stop on that card.
    - Every pick queues the reply and resolve instead of posting them. This covers fixes, answers, and pushback alike.
-   - "undo" before the push runs `git reset --soft HEAD~1` (the change stays uncommitted) and removes the item from the queue.
+   - "undo" before the push removes the last queued item. Only if that item made its own commit **and** `git rev-parse HEAD` is still that commit, also run `git reset --soft HEAD~1` (the change stays uncommitted). If the commit is shared with other queued replies, ask first, because those replies link to it. If HEAD moved, don't reset. Tell the user instead.
    - After the last card, show the **Send screen**. On `🚀 Push & send all`, run `git push` (never force). If the push is rejected, send nothing and explain why. Once it succeeds, post each queued reply with its commit link (host file, **Commit link**), then resolve the threads.
-   - On `💾 Keep local`, save the queue to `.git/reviewer/queue.json` (never committed). The next Discussion session on this PR starts by offering to send it.
+   - On `💾 Keep local`, save the queue to `$(git rev-parse --git-dir)/second-look/queue.json` (inside git's own folder, so never committed, and correct in worktrees). The next Discussion session on this PR starts by offering to send it.
 5. **Reviewer:** replies and resolves post as soon as they're picked.
 6. **Same ask, several threads** (author): fix it once with one commit, then queue a reply in each thread linking that commit. **Contradicting asks:** mark both threads ⚔️ and show both on one card, so the reply can address both reviewers.
 7. **Reviewer, at the end:** if the author pushed commits after the user's last review, offer `🔍 Review new commits` (PR review on just those commits, host file **New commits since me**), then the **Finish menu** to update the verdict.

@@ -32,7 +32,7 @@ gh api "repos/$O/$R/pulls/<N>/comments" -F body=@comment.md -f commit_id=<headRe
 ```
 
 - Use `side=LEFT` for the old side. For a range, add `-F start_line=<first>`.
-- `line` must be inside a diff hunk, or GitHub returns 422. Put any finding outside the hunks into the verdict summary instead.
+- `line` must be inside a diff hunk, or GitHub returns 422. Post a finding outside the hunks as a PR conversation comment instead (`repos/$O/$R/issues/<N>/comments`, see **Reply, resolve**).
 - Keep the returned id for undo.
 - **Suggestion:** a ```` ```suggestion ```` block holding the replacement for lines `start_line`–`line`. GitHub shows it as a one-click "Commit suggestion".
 
@@ -48,14 +48,17 @@ gh api "repos/$O/$R/pulls/<N>/reviews" -f commit_id=<headRefOid> \
 ## Read threads
 
 ```bash
-gh api graphql -F o="$O" -F r="$R" -F n=<N> -f query='
-query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){
-  reviewThreads(first:100){nodes{id isResolved isOutdated path line startLine diffSide
-    comments(first:50){nodes{author{login} body url createdAt diffHunk originalCommit{abbreviatedOid}}}}}
-  comments(first:100){nodes{author{login} body url}}}}}'
+gh api graphql --paginate -F o="$O" -F r="$R" -F n=<N> -f query='
+query($o:String!,$r:String!,$n:Int!,$endCursor:String){repository(owner:$o,name:$r){pullRequest(number:$n){
+  reviewThreads(first:100,after:$endCursor){pageInfo{hasNextPage endCursor}
+    nodes{id isResolved isOutdated path line startLine diffSide
+    comments(first:100){totalCount nodes{author{login} body url createdAt diffHunk originalCommit{abbreviatedOid}}}}}}}}'
+gh api --paginate "repos/$O/$R/issues/<N>/comments?per_page=100"   # conversation comments: .user.login .body .html_url .id
 ```
 
-`reviewThreads` are line comments and can be resolved. `diffHunk` on the first comment feeds the Thread card's code view. `comments` are PR conversation comments and can only be replied to.
+`--paginate` follows `reviewThreads` pages. If a thread's `totalCount` is over 100, say that only its first 100 replies were read.
+
+`reviewThreads` are line comments and can be resolved. `diffHunk` on the first comment feeds the Thread card's code view. Conversation comments come from the REST call and can only be replied to.
 
 ## Reply, resolve
 

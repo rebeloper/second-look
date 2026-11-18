@@ -54,6 +54,7 @@ glab api -X POST "$MR/discussions" -F body=@comment.md \
 | ⛔ Request changes | `glab api -X POST "$MR/draft_notes" -F note=@summary.md`, then `glab api -X POST "$MR/draft_notes/bulk_publish" -f reviewer_state=requested_changes` |
 | 💬 Comment | `glab api -X POST "$MR/notes" -F body=@summary.md` |
 
+- `bulk_publish` publishes **all** of the user's pending drafts on this MR, including ones started in the web UI. Before Request changes, run `glab api "$MR/draft_notes"`. If any drafts exist besides the summary, list them and ask: publish them too, or post the summary as 💬 Comment and let the user request changes in the web UI.
 - If the user lacks approval rights, GitLab records `reviewed` instead of `requested_changes`. Tell them.
 - The MR author can't approve their own MR unless the project allows it.
 

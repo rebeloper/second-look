@@ -9,7 +9,8 @@ Every screen is one of these templates. Keep the order, headings, emoji, and sep
 | 🔴 Blocker · 🟠 Should fix · 🟡 Nit | Finding severity |
 | ⛔ Not ready · ⚠️ Fix first · ✅ Ready | Verdict |
 | 💬 open · ✔️ resolved · 🕸️ outdated | Thread state |
-| ✅ valid · 🤔 partly · ❌ disagree | Your take on a comment |
+| ✅ valid · 🤔 partly · ❌ disagree | Your take on a comment (author) |
+| ✅ addressed · 🤔 partly · ❌ not addressed | Your take on a reply or fix (reviewer) |
 | `---` | Separates every card |
 
 ## Comment labels (Conventional Comments)
@@ -97,7 +98,7 @@ Pluralize counts correctly ("1 file", "2 files"). Untracked files count as chang
 
 Verdict rule: any 🔴 → ⛔ Not ready. Only 🟠 → ⚠️ Fix first. Only 🟡 or nothing → ✅ Ready.
 
-If there are no findings, print only the header and `> ✅ **Ready**: nothing found`, followed by one line on what you checked. Skip the walkthrough.
+If there are no findings, print only the header and `> ✅ **Ready**: nothing found`, followed by one line on what you checked. Skip the walkthrough. In PR review, go straight to the **Finish menu**.
 
 ## Menus
 
@@ -155,7 +156,7 @@ Code is shown the way a host's diff view shows it, with line numbers and inline 
 +        39 ┃         isLoading = true
 +        40 ┃         api.fetchProfile(id: userID) { result in
 +        41 ┃             self.timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
-            ┃  ╭─ 🔴 @rebeloper · L41 · new side · Blocker · inline · a1b2c3d
+            ┃  ╭─ 🔴 @you · L41 · new side · Blocker · inline · a1b2c3d
             ┃  │ issue (blocking): Retain cycle in the refresh timer
             ┃  │
             ┃  │ The timer's closure captures self strongly.
@@ -202,7 +203,7 @@ Show one card at a time, then the finding menu. Wait for the answer before showi
 +<fixed line>
 ```
 
-<PR review mode: if the comment is a 📝 review body comment (no pinned line), show it after the code view as a blockquote with the same metadata line.>
+<PR review mode: if the finding is outside every diff hunk, it can't be pinned. Mark it 📝 PR-level and show the comment after the code view as a blockquote with the same metadata line. 📤 Post posts it right away as a PR-level comment (host file, conversation comment).>
 ````
 
 The box shows a suggestion as `Suggested change`. The posted body uses the host's suggestion format (see the host file). Include a suggestion only when the fix replaces exactly the pinned lines. Otherwise describe the fix in the comment text.
@@ -221,9 +222,12 @@ Act as soon as the user picks, confirm with one line, then show the next card:
 - 📋 Copy → see **Copy line** below.
 - `Stop here` ends the walkthrough. The current finding and the rest count as skipped.
 
-**Undo:** if the user types "undo", delete the last comment posted in this session (host file). If that action also resolved a thread, unresolve it. Confirm with `↩️ Removed <file>:<line>`. Undo only reaches back one action at a time.
+**Undo:** undo only reaches back one action at a time.
+- After 📤 Post: delete that comment (host file). If the action also resolved a thread, unresolve it. Confirm with `↩️ Removed <file>:<line>`.
+- After 🔧 Fix (Local, Self-review): reverse exactly the lines that fix changed, and leave every other line in the file alone. Never run `git checkout`, `git restore`, or `git stash` on the file, because it holds the user's own uncommitted work. Confirm with `↩️ Reverted <file>:<line>`.
+- For the Discussion author flow, see `SKILL.md`.
 
-**Finish menu** (PR review only, after the last card, and only if anything was posted or copied): `⛔ Request changes` · `💬 Comment` · `✅ Approve` · `👋 Leave as is`. Recommend `Request changes` if a 🔴 was posted, otherwise `Comment`. The preview shows the one-paragraph review summary that will post with it. This submits the overall verdict. The inline comments are already posted.
+**Finish menu** (PR review only: after the last card, or right after the overview when there are no findings): `⛔ Request changes` · `💬 Comment` · `✅ Approve` · `👋 Leave as is`. Recommend `Request changes` if a 🔴 was posted, `Approve` if nothing was posted, otherwise `Comment`. Before the menu, print the review summary that will post with it, in full, as a blockquote under `**Review summary**`, so the user sees the exact text. This submits the overall verdict. The inline comments are already posted.
 
 ## Copy line
 
@@ -308,7 +312,7 @@ Author side of Discussion, after the last card:
 | 2 | (none) | `ProfileView.swift:8` · `@tom` | "question: would a subview help here? …" |
 ```
 
-The menu is `🚀 Push & send all` (Recommended) · `✏️ Edit queue` · `💾 Keep local`. `✏️ Edit queue` reopens any card the user names. Replies post as `<reply text>` followed by a blank line and `Fixed in [<sha7>](<commit link>)` for fix replies.
+Below the table, show each reply in full as a blockquote, including its `Fixed in <sha7>` line, so the user sees the exact text before sending. The menu is `🚀 Push & send all` (Recommended) · `✏️ Edit queue` · `💾 Keep local`. `✏️ Edit queue` reopens any card the user names. Replies post as `<reply text>` followed by a blank line and `Fixed in [<sha7>](<commit link>)` for fix replies.
 
 ## Done card
 

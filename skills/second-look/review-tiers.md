@@ -104,7 +104,8 @@ The agent that found a finding never verifies it.
   - 9–10: verified in the code, with a concrete trigger.
   - 7–8: very likely, and relies only on reasonable assumptions about code outside the diff.
   - 5–6: plausible but unverified.
-  - Below 5: don't report it.
+  - 3–4: weak. Shown only at tier 3, as `⚠️ Unverified`, after a fresh verifier failed to reject it.
+  - Below 3: never report.
 - **Severity is likelihood × impact,** not "breaks a rule". A missing second safeguard is 🟡 hardening when the first one holds. Not everything is a blocker.
 - **A certain failure is 🔴,** even if it looks like unfinished work, such as a missing file that fails on load or code that throws on every call. Say "may be unfinished" in the text.
 - **Fixes:** if a change of 10 lines or less fixes it, give the exact current lines and their replacement.
