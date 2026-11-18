@@ -89,7 +89,7 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 - **needs validation:** state the exact unresolved fact.
 - **rejected:** dropped, and counted in the overview.
 
-The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier.
+The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier, within the caps in **Helper agent limits**.
 
 At tier 3+, the verdict decides the marker: **needs validation** always shows `⚠️`, whatever the score. **Confirmed** never does.
 
@@ -97,11 +97,30 @@ At tier 3+, the verdict decides the marker: **needs validation** always shows `�
 
 **L. Coverage ledger.** List every changed file against every category from H, and mark each cell checked, not applicable, or not done. A critic pass then looks for gaps. Fill the gaps before reporting.
 
-**M. Parallel hunters.** Split the ledger by area and give each area to its own fresh agent.
+**M. Parallel hunters.** Split the ledger by area and give each area to its own fresh agent, within the caps in **Helper agent limits**.
 
 **N. Second verifier.** A different fresh agent re-checks every final `file:line` claim and quoted line against the files.
 
 **O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
+
+## Helper agent limits
+
+Hard caps on helper agents per review. Never go over them, even if the user says "be thorough". Instead, say what was left out.
+
+| Tier | Helpers at most | Used for |
+|---|---|---|
+| 1 · Diff Scan | 0 (1 if self-authored) | the fresh reviewer for self-authored code |
+| 2 · Impact Review | 0 (1 if self-authored) | the same |
+| 3 · Verified Review | 3 | 1 self-authored reviewer (if needed), then verifiers for the rest |
+| 4 · Full Audit | 8 | up to 4 area hunters, up to 3 verifiers, 1 final verifier |
+
+- **Only the main session starts agents.** Helpers, including the fresh reviewer for self-authored code, never start agents. The main session starts every verifier and hunter itself.
+- **Too many findings:** if there are more findings than the verifiers can cover at 8 each, verify the most severe ones first. Show the rest with `⚠️` and a `🙈 <n> not independently verified` line.
+- **Too many areas:** if there are more areas than hunters, merge areas until they fit.
+- **Failures:** a helper that errors or comes back empty gets one retry. After that, the main session does that part as a single-agent pass and says so on the tier line. Never loop.
+- **Before tier 4:** before starting any helper, show the plan (`🤖 up to <n> helper agents · <areas>`) and ask with a menu: `▶️ Run audit` · `🎚️ Use tier 3 instead` · `👋 Cancel`.
+- **Report the count:** the tier line ends with `🤖 <n> agents` for the helpers actually used. Leave it out when none were used.
+- **Re-runs:** moving up a tier, or `🔍 Review new commits`, counts against the same caps for that review. Earlier helpers are not re-run.
 
 ## Rules for every tier
 

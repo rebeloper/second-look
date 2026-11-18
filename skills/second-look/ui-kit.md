@@ -134,8 +134,8 @@ The `🎚️ Change tier` preview shows the current tier. Picking it opens the *
 **Tier · Which depth?**
 1. 🎚️ 1 · Diff Scan · sure bugs in the changed lines · ~1 min
 2. 🎚️ 2 · Impact Review (current) · + intent, callers, tests · a few min
-3. 🎚️ 3 · Verified Review · + focused passes, failure modes, an independent check of each finding · longer, uses helper agents
-4. 🎚️ 4 · Full Audit · + module map, coverage checklist, parallel helper agents, a test run · longest, most expensive
+3. 🎚️ 3 · Verified Review · + focused passes, failure modes, an independent check of each finding · longer, up to 3 agents
+4. 🎚️ 4 · Full Audit · + module map, coverage checklist, parallel helper agents, a test run · longest, most expensive, up to 8 agents, asks first
 ```
 
 - **Higher tier:** re-review, keeping the findings already made. Only the steps the new tier adds run again.
