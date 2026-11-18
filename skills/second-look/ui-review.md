@@ -41,6 +41,7 @@ Then:
 | 🧪 Tests | <✅ covered | 🟡 partly: <gap> | ❌ not covered: <gap>> |
 | 🗣️ Claims | <tier 2+, when the description, the user, or a code comment claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
 | 👥 Reviewers | <PR modes, when others reviewed: `@a` ⛔ changes requested · `@b` ✅ approved · `@c` 💬 commented · <n> open threads> |
+| 📏 House rules | <when step P ran: `<source>`, `<source>` <· 👤 personal instructions, in Local and Self-review> · <n> followed · <n> broken · <n> skipped (linter covers) · <n> ignored (<why>)> |
 | 📋 Owner checks | <when a finding depends on a fact outside the repo: the fact → a safe check the owner can run> |
 | 🎫 Ticket | <tier 3+, when a ticket, PR description, or requirements the user stated in chat exist: n met · n met but broken · n missing · n need a human> |
 | 🗺️ Coverage | <tier 4: n files × n categories checked · n rejected · n need validation> |
@@ -104,6 +105,7 @@ Show one card at a time, then the finding menu. Wait for the answer before showi
 <Code view of the hunk. In PR review mode, the comment box sits inside it, under the pinned line.>
 
 <1-3 sentences: what breaks, for which input, and why.>
+<House-rule finding: add `📏 <rule file>:<line> · "<rule, in a few words>"`.>
 <If the finding or its fix rests on something you could not check, end with `⚠️ Unverified: <assumption>` (e.g. the DB driver's placeholder syntax).>
 
 <Local mode:>

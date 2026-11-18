@@ -70,7 +70,7 @@ Replying to PR/MR conversations that wait on the user, from either side. The rol
 1. Fetch the threads (host file). Keep only the ones waiting on the user, unless they ask for all of them.
 2. Print the **Inbox**. Blocking threads come first.
 3. Walk through one **Thread card** at a time, then its **Thread action bar**. Before taking a side, check against the code as it is now, not against what anyone claims:
-   - **Author:** check the comment against the code. Never agree because a reviewer said so, and never push back without a technical reason. If a comment is unclear, the draft reply asks a question.
+   - **Author:** check the comment against the code. If it cites a house rule, read that rule (step P in `review-tiers.md`) and check that it really says so. Never agree because a reviewer said so, and never push back without a technical reason. If a comment is unclear, the draft reply asks a question.
    - **Reviewer:** check whether their reply or new commits actually address your point. Show what changed on that line since your comment.
 4. **Author: commit per fix, send after the push.**
    - Before the first fix, check that the current branch is the PR's head branch. If it isn't, ask before switching. If the tree has uncommitted changes, ask whether to stash them, because they must never be mixed into fix commits. If the user agrees, run `git stash push -u -m "second-look: <PR>"` and remember it. At the end (after Push & send, Keep local, or Stop), run `git stash pop` for that entry and say so on the Done card. If the pop conflicts, stop and show the conflict without resolving it yourself.

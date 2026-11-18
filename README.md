@@ -76,6 +76,28 @@ Second Look picks the mode from what you say and who wrote the PR. It shows its 
 
 Without a tier named, small diffs (under 30 lines) get Diff Scan, most get Impact Review, and very large ones (over 1,500 lines) ask first. Generated files, lockfiles, assets, and `project.pbxproj` noise are skipped. Say "quick look", "thorough review", or "audit", or switch tiers from the start menu. Every finding carries a confidence score. Comments follow [Conventional Comments](https://conventionalcomments.org) (`issue (blocking):`, `nitpick (non-blocking):`, …).
 
+## House rules
+
+From tier 2, Second Look also checks the diff against your team's own guidelines: style, architecture, and conventions. It finds them on its own in `CONTRIBUTING.md`, `STYLEGUIDE.md`, `REVIEW.md`, `docs/architecture*`, decision records, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, Copilot's instruction files (`.github/copilot-instructions.md` and path-specific `.github/instructions/*.instructions.md`), and your PR template. When you review your own code, your personal instructions (`~/.copilot/copilot-instructions.md`, `~/.copilot/instructions/`, `~/.claude/CLAUDE.md`) count too, as 🟡 preferences. They're never applied to other people's PRs. Every finding cites the rule it breaks. "Must" rules become 🟠, "should" rules 🟡. Anything your linter already enforces is skipped.
+
+To choose the sources yourself, add a `.second-look.md` at the repo root:
+
+```markdown
+## Sources
+- docs/ios-guidelines.md
+- https://wiki.example.com/mobile/architecture
+
+## Rules
+- Views never call `APIClient` directly; go through a view model. (must)
+- New async code uses async/await, not completion handlers. (should)
+- No new singletons. (must)
+
+## Ignore
+- Sources/Generated/**
+```
+
+All three sections are optional. Say "skip house rules" to turn the check off for a review.
+
 ## Install
 
 ```bash

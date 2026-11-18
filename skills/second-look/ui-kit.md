@@ -35,7 +35,7 @@ Every comment and reply that gets posted or copied starts with a label line in t
 
 Other labels can be used when they fit: `thought` for an idea that isn't a request, `chore` for process work such as a changelog entry, and `note` for information with no action needed. A small fix can take the `(if-minor)` decoration, meaning "fix it only if it's quick".
 
-The emoji severity is for display in chat only. Posted text starts with the label line, not an emoji.
+A house-rule comment ends with a link to the rule: `Rule: <rule file>#L<line>` (or the `.second-look.md` rule text). The emoji severity is for display in chat only. Posted text starts with the label line, not an emoji.
 
 Replies use the same format. If the user's reply contains a question back to the reviewer, label it `question`. Otherwise, a plain reply needs no label.
 
