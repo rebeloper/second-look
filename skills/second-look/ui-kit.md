@@ -76,10 +76,11 @@ Then:
 | | |
 |---|---|
 | 🚪 Merge danger | <one-way | two-way> door · blast radius: <1-2 words> |
-| 🧭 Impact | `<symbol>` <change> · <n> uses · <⚠️ n not updated | ✅ all updated | ⚠️ exported, outside callers unknown (when 0 uses in the repo)> |
+| 🧭 Impact | <new symbols: `<symbol>` new · <n> uses. Changed symbols:> `<symbol>` <change> · <n> uses · <⚠️ n not updated | ✅ all updated | ⚠️ exported, outside callers unknown (when 0 uses in the repo)> |
 | 🧪 Tests | <✅ covered | 🟡 partly: <gap> | ❌ not covered: <gap>> |
-| 🗣️ Claims | <tier 2+, when the description or the user claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
+| 🗣️ Claims | <tier 2+, when the description, the user, or a code comment claims something: each claim → ✅ holds · ❌ contradicted by `<file>:<line>` · ⚠️ can't verify from the repo (e.g. manual testing)> |
 | 👥 Reviewers | <PR modes, when others reviewed: `@a` ⛔ changes requested · `@b` ✅ approved · `@c` 💬 commented · <n> open threads> |
+| 📋 Owner checks | <when a finding depends on a fact outside the repo: the fact → a safe check the owner can run> |
 | 🎫 Ticket | <tier 3+, when a ticket, PR description, or requirements the user stated in chat exist: n met · n met but broken · n missing · n need a human> |
 | 🗺️ Coverage | <tier 4: n files × n categories checked · n rejected · n need validation> |
 
@@ -123,7 +124,7 @@ In the numbered form, a preview becomes one line after ` · `. Leave it out when
 
 Free text always works: reword a comment, ask a question, or type "undo". Answer, then show the same menu again.
 
-**Start menu** (after the overview). Title `Start`, question `How do you want to go through the <n> findings?`:
+**Start menu** (after the overview). Title `Start`, question `How do you want to go through the <n> findings?`. `▶️ Walk through` is the recommended option. The `🔧 Fix all now` preview says how many fixes, which files, and which fixes will first ask for facts:
 Local, Self-review: `▶️ Walk through` · `🔧 Fix all now` · `🎚️ Change tier` · `👋 Done`
 PR review: `▶️ Walk through` · `🎚️ Change tier` · `🔒 Keep private`
 
@@ -134,8 +135,8 @@ The `🎚️ Change tier` preview shows the current tier. Picking it opens the *
 ```
 **Tier · Which depth?**
 1. 🎚️ 1 · Diff Scan · sure bugs in the changed lines · ~1 min
-2. 🎚️ 2 · Impact Review (current) · + intent, callers, tests · a few min
-3. 🎚️ 3 · Verified Review · + focused passes, failure modes, an independent check of each finding · longer, up to 3 agents
+2. 🎚️ 2 · Impact Review (current) · + intent and claims, callers and other paths, tests, security checklists · a few min
+3. 🎚️ 3 · Verified Review · + focused passes, failure modes, an independent check of each finding, variant search · longer, up to 3 agents
 4. 🎚️ 4 · Full Audit · + module map, coverage checklist, parallel helper agents, a test run · longest, most expensive, up to 8 agents, asks first
 ```
 

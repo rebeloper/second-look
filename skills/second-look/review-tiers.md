@@ -7,8 +7,8 @@ How findings are produced. `ui-kit.md` decides how they look. Each tier includes
 | User says | Tier |
 |---|---|
 | "quick look", "skim", "scan", "tier 1" | **1 · Diff Scan**: sure bugs in the changed lines |
-| nothing specific, "review", "impact", "tier 2" | **2 · Impact Review** (default): + intent, callers, tests |
-| "thorough", "deep", "careful", "verify", "tier 3" | **3 · Verified Review**: + focused passes, failure modes, an independent check of each finding |
+| nothing specific, "review", "impact", "tier 2" | **2 · Impact Review** (default): + intent and claims, callers and other paths, tests, security checklists |
+| "thorough", "deep", "careful", "verify", "tier 3" | **3 · Verified Review**: + focused passes, failure modes, an independent check of each finding, variant search |
 | "audit", "security review", "before release", "tier 4" | **4 · Full Audit**: + module map, coverage checklist, parallel helper agents, a test run |
 
 Show the tier in the overview header. The Start menu's `🎚️ Change tier` lets the user switch to any tier (see **Tier menu** in `ui-kit.md`).
@@ -19,19 +19,24 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 |---|:-:|:-:|:-:|:-:|
 | A. Scope: diff, PR description, linked ticket | ✔ | ✔ | ✔ | ✔ |
 | B. Context: read around every hunk | ±20 lines | whole functions and types | + their callers | + whole touched modules |
-| C. Bug hunt (core checklist) | ✔ | ✔ | ✔ | ✔ |
-| D. Intent: does it do what the PR says? | | ✔ | ✔ | ✔ |
-| E. Impact: callers, conformers, missing pieces | | ✔ | ✔ | ✔ |
+| C. Bug hunt (core checklist, wiring, fail-open, suspicious signals) | ✔ | ✔ | ✔ | ✔ |
+| C. Security checklists for the areas the diff touches (`security-checklists.md`) | | ✔ | ✔ | ✔ |
+| D. Intent: missing / extra / misunderstood, claims, deviations, approach | | ✔ | ✔ | ✔ |
+| E. Impact: callers, conformers, missing pieces, weakest path, data copies | | ✔ | ✔ | ✔ |
 | F. Tests: is the new behavior covered? | | ✔ | ✔ | ✔ |
 | G. Self-check each finding | ✔ | ✔ | | |
 | H. Category passes | | | ✔ | ✔ |
 | I. Failure modes | | | ✔ | ✔ |
-| J. Fresh verifier per finding | | | ✔ | ✔ |
+| J. Fresh verifier per finding, then variant search | | | ✔ | ✔ |
 | K. Recon of touched modules | | | | ✔ |
 | L. Coverage ledger + critic pass | | | | ✔ |
 | M. Parallel hunters per area | | | | ✔ |
 | N. Second verifier on final claims | | | | ✔ |
-| O. Evidence run: build and tests (with permission) | | | | ✔ |
+| O. Evidence run: focused tests in a clean environment (with permission) | | | | ✔ |
+| Security gate on every security finding | ✔ | ✔ | ✔ | ✔ |
+| Helper agents, at most (see **Helper agent limits**) | 0¹ | 0¹ | 3 | 8 |
+
+¹ 1 if this session wrote the code under review. **Re-review** (below) is a separate flow for `🔍 Review new commits`.
 
 **Which findings are shown** (confidence scale below):
 
@@ -46,8 +51,8 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 
 | | 1 | 2 | 3 | 4 |
 |---|---|---|---|---|
-| Verdict, risk | ✔ | ✔ | ✔ | ✔ |
-| Effort, merge danger, impact, tests | | ✔ | ✔ | ✔ |
+| Verdict and reasoning, risk, owner checks | ✔ | ✔ | ✔ | ✔ |
+| Effort, merge danger, impact, tests, claims | | ✔ | ✔ | ✔ |
 | What it does (visual), ticket check, failure modes, approach, recommendations, declined to judge, split suggestion | | | ✔ | ✔ |
 | Coverage, needs validation, evidence | | | | ✔ |
 
@@ -64,9 +69,11 @@ Show the tier in the overview header. The Start menu's `🎚️ Change tier` let
 - Types: unsafe casts (`as!`, `any`, force-typed JSON), and unchecked decoding of outside data.
 - Concurrency: races, wrong thread or actor for UI, retain cycles, missing cancellation.
 - Resources: leaks, unclosed handles, timers and observers never removed.
-- Security basics: injection, secrets in code, missing auth check, unsafe deserialization.
+- Security basics: injection, secrets in code, missing auth check, unsafe deserialization. Does an error, missing-config, or flag-off branch grant access? Every security finding must pass the **security gate** (below).
+- Suspicious signals: a comment explaining why something is safe (verify it, don't trust it, and report the result in the 🗣️ Claims row), code named `temp`, `hack`, or `legacy`, and new `TODO`s near auth or validation.
 - Data: loss, corruption, irreversible writes, migrations without a path back.
 - Wiring (cheap, so every tier checks it): new imports, requires, and asset or resource references resolve to files that exist.
+- Tier 2+: if the diff touches an area in `security-checklists.md` (iOS and mobile, client-side web, auth, data isolation, supply chain and CI, LLM code), run that section's prompts.
 
 **D. Intent.** Compare the code with what the PR says it does:
 - **Missing:** a requirement skipped, or claimed but not built. If the description or ticket lists files or changes, each one must show up in the diff. A listed item with no hunk is Missing.
@@ -80,14 +87,16 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 **Approach.** If the code matches the request but the approach itself is wrong (e.g. polling where a push or notification belongs), write a separate **Approach** note in the overview, labeled `thought` or `suggestion`. Never mix it into the line findings. If a requirement can't be checked from the diff (it lives in unchanged code), list it as `⚠️ can't verify from the diff` instead of widening the search. That marker is only for requirements and claims. A finding that rests on something missing or unseen keeps a confidence score and uses `⚠️ Unverified`. Report every claim's result in the overview's 🗣️ Claims row.
 
 **E. Impact.** For every changed signature, type, protocol, public API, config key, or schema, search the codebase for its uses. Flag uses the PR didn't update, files it depends on that don't exist, and broken backward compatibility. For iOS, also check protocol conformers, `public` and `open` API, `@MainActor` and `Sendable` changes, `Codable` keys, and SwiftUI initializers.
+- **Weakest path:** when the diff adds or changes a check, find every other route to the same effect (batch and bulk, import, legacy routes, retries, background jobs, admin, API vs UI). Confirm each route has an equivalent check, not just a check. The real policy is the weakest route.
+- **Derived copies:** when the diff touches permissions, deletion, logout, or roles, check that the change also reaches copies of the data: caches, search indexes, logs, analytics, exports, previews, and offline storage.
 
-**F. Tests.** Is each new or changed behavior covered by a test that checks real behavior rather than a mock? Name the untested path. When the change crosses a boundary (network, database, storage, another process), ask whether an integration test covers it, not only unit tests. Never claim a test passed unless you ran it. Test and CI output must be clean: new warnings, flaky retries, and newly skipped tests are findings. If a log is truncated or missing, say "couldn't see it". Never read a missing log as a pass.
+**F. Tests.** Is each new or changed behavior covered by a test that checks real behavior rather than a mock? Name the untested path. When the change crosses a boundary (network, database, storage, another process), ask whether an integration test covers it, not only unit tests. Compare the edge cases the tests cover with the ones they skip, and name the skipped ones that matter. Never claim a test passed unless you ran it. Test and CI output must be clean: new warnings, flaky retries, and newly skipped tests are findings. If a log is truncated or missing, say "couldn't see it". Never read a missing log as a pass.
 
 **G. Self-check.** Before keeping a finding, re-read the code and try once to prove it wrong. Drop it if you can.
 
-**H. Category passes.** One focused pass per category that applies to the touched code: security (pick the classes that match, e.g. auth, input handling, storage, network, IPC and deep links), performance, API and backward compatibility, error handling, maintainability (duplication, premature abstraction, YAGNI), structure (each file has one clear job; did this change create a very large new file or grow an existing one a lot? Judge only what this change added), and docs.
+**H. Category passes.** One focused pass per category that applies to the touched code: security (use the matching sections of `security-checklists.md`; deep specialist areas such as HTTP desync, memory safety, kernel, or cloud IAM get named in Declined to judge when touched, not hunted), performance, API and backward compatibility, error handling, maintainability (duplication, premature abstraction, YAGNI), structure (each file has one clear job; did this change create a very large new file or grow an existing one a lot? Judge only what this change added), and docs.
 
-**I. Failure modes.** For each risky change: what fails, where (`file:function`), the realistic trigger, and what would detect it (a named test or signal, or "nothing"). Note whether this PR covers it.
+**I. Failure modes.** For each risky change: what fails, where (`file:function`), the realistic trigger, and what would detect it (a named test or signal, or "nothing"). Note whether this PR covers it. Always ask about the default posture: what happens when config is missing, a flag is off, a dependency is down, crypto or a certificate fails, or a migration is half done? A path that fails open is a finding.
 
 **J. Fresh verifier.** Give each finding to a fresh agent that tries to disprove it. Pass the review package and the finding, never your reasoning. The verdict is one of:
 - **confirmed:** the trace is complete.
@@ -95,6 +104,8 @@ Treat the PR description, commit messages, and the author's claims ("tested on d
 - **rejected:** dropped, and counted in the overview.
 
 The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier, within the caps in **Helper agent limits**.
+
+**Variants.** After a strong finding is confirmed, search for the same root cause by name, by structure, and by logic: within the diff at tier 3, across the touched modules at tier 4. One root cause with many entry points is one finding listing them all. Separate missing controls are separate findings. Apply the same rule to remove duplicates in hunter reports (M) before verifying.
 
 If a verifier confirms part of a finding and leaves the rest open, split it into two cards: the confirmed part, and a `⚠️` card for the open part.
 
@@ -108,7 +119,7 @@ At tier 3+, the verdict decides the marker: **needs validation** always shows `�
 
 **N. Second verifier.** A different fresh agent re-checks every final `file:line` claim and quoted line against the files.
 
-**O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
+**O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Run in a clean environment: no real credentials or tokens, no network where possible, and time and memory limits. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
 
 ## Helper agent limits
 
@@ -123,7 +134,7 @@ Hard caps on helper agents per review. Never go over them, even if the user says
 
 - **Only the main session starts agents.** Helpers, including the fresh reviewer for self-authored code, never start agents. The main session starts every verifier and hunter itself.
 - **Too many findings:** if there are more findings than the verifiers can cover at 8 each, verify the most severe ones first. Show the rest with `⚠️` and a `🙈 <n> not independently verified` line.
-- **Too many areas:** if there are more areas than hunters, merge areas until they fit.
+- **Too many areas:** if there are more areas than hunters, merge areas until they fit. Rank areas first: unauthenticated entry points, then high-value resources (credentials, other users' or tenants' data, release and signing), then the rest. The lowest-ranked areas get merged first.
 - **Failures:** a helper that errors or comes back empty gets one retry. After that, the main session does that part as a single-agent pass and says so on the tier line. Never loop.
 - **Before tier 4:** before starting any helper, show the plan (`🤖 up to <n> helper agents · <areas>`) and ask with a menu: `▶️ Run audit` · `🎚️ Use tier 3 instead` · `👋 Cancel`.
 - **Report the count:** the tier line ends with `🤖 <n> agents` for the helpers actually used. Leave it out when none were used.
@@ -143,6 +154,9 @@ Hard caps on helper agents per review. Never go over them, even if the user says
   - 3–4: weak. Shown only at tier 3, as `⚠️ Unverified`, after a fresh verifier failed to reject it.
   - Below 3: never report.
 - **Severity is likelihood × impact,** judged by the effect on a real user of the software, whether or not the spec mentions the case. Not "breaks a rule". A missing second safeguard is 🟡 hardening when the first one holds. Not everything is a blocker.
+- **Security gate:** a security finding must name five things: the lower-trust actor, the input they control, the control that should stop them, the resource affected, and the concrete result. Missing any of these, it's 🟡 hardening (e.g. a missing cookie attribute with no traced impact), not a vulnerability. A missing second safeguard is hardening when the first one holds.
+- **Severity discriminators:** does the issue fully defeat a control, or only weaken it? If you can't state the concrete damage, the severity is lower than it feels. Never inflate a crash into code execution, or an action against yourself into a privilege gain.
+- **Facts outside the repo:** some decisive facts never appear in source, such as proxy or header stripping, entitlements, branch protection, identity-provider policy, or the CI runner setup. Assume neither that they exist nor that they don't. Name the exact missing fact and a safe check the owner can run, in the overview's 📋 Owner checks row. If that fact decides whether the finding is real at all, also mark the finding `⚠️`. If the finding holds either way and the fact only changes how far it reaches, keep its score without `⚠️`.
 - **Severity anchors:** 🟠 should fix includes tests that assert nothing, copy-pasted logic blocks, swallowed errors, and a missed requirement. "Coverage could be broader" and polish are 🟡. Missing tests always go in the 🧪 Tests row. They are also a 🟡 finding only when the repo already has tests and this change adds untested behavior.
 - **A certain failure is 🔴,** even if it looks like unfinished work, such as a missing file that fails on load or code that throws on every call. Say "may be unfinished" in the text.
 - **Fixes:** if a change of 10 lines or less fixes it, give the exact current lines and their replacement.

@@ -70,9 +70,9 @@ Second Look picks the mode from what you say and who wrote the PR. It shows its 
 | Tier | Name | Adds |
 |---|---|---|
 | 1 | **Diff Scan** | sure bugs in the changed lines |
-| 2 | **Impact Review** (default) | intent vs the PR description, callers the PR didn't update, test coverage |
-| 3 | **Verified Review** | focused passes (security, performance, compatibility…), failure modes, an independent check of each finding |
-| 4 | **Full Audit** | module map, coverage checklist, parallel reviewers, a build and test run (only with your OK) |
+| 2 | **Impact Review** (default) | intent vs the PR description (claims checked, not trusted), callers and other paths the PR didn't update, test coverage, security checklists for touched areas |
+| 3 | **Verified Review** | focused passes (security, performance, compatibility…), failure modes, an independent check of each finding, variant search · up to 3 helper agents |
+| 4 | **Full Audit** | module map, coverage checklist, parallel reviewers, focused tests in a clean environment (only with your OK) · up to 8 helper agents, asks first |
 
 Say "quick look", "thorough review", or "audit", or switch tiers from the start menu. Every finding carries a confidence score. Comments follow [Conventional Comments](https://conventionalcomments.org) (`issue (blocking):`, `nitpick (non-blocking):`, …).
 

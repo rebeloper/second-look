@@ -7,7 +7,7 @@ description: Use when the user asks to review code, including local uncommitted 
 
 Code review in chat that looks and feels like a GUI. Four modes, one visual language.
 
-**REQUIRED:** Read `review-tiers.md` before reviewing, and `ui-kit.md` before writing any output. Every screen you print is one of its templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**). Local mode needs no host: skip host detection.
+**REQUIRED:** Read `review-tiers.md` before reviewing, and `ui-kit.md` before writing any output. Read `security-checklists.md` sections only when the diff touches their area. Every screen you print is one of its templates, filled in. For PR review, Self-review, and Discussion, read the host file first (see **Host**). Local mode needs no host: skip host detection.
 
 ## Host
 
