@@ -11,7 +11,7 @@ Read this file only at tier 3–4, or for a **Re-review**. Everything in `review
 **J. Fresh verifier.** Give each finding to a fresh agent that tries to disprove it. Pass the review package and the finding, never your reasoning. The verdict is one of:
 - **confirmed:** the trace is complete.
 - **needs validation:** state the exact unresolved fact.
-- **rejected:** dropped, and counted in the overview.
+- **rejected:** dropped, and counted on the tier line (`· <n> rejected`) at tier 3, or in the 🗺️ Coverage row at tier 4.
 
 The agent that found a finding never verifies it. One fresh verifier may take up to 8 findings. Beyond that, batch them by area, at most 8 per verifier, within the caps in **Helper agent limits**.
 
@@ -29,11 +29,11 @@ At tier 3+, the verdict decides the marker: **needs validation** always shows `�
 
 **N. Second verifier.** A different fresh agent re-checks every final `file:line` claim and quoted line against the files.
 
-**O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Run in a clean environment: no real credentials or tokens, no network where possible, and time and memory limits. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
+**O. Evidence run.** Build, then run the focused tests that answer a specific doubt from the review, and show the before and after. Don't run whole suites, race detectors, or repeat loops. Recommend those in the overview instead. Run in a clean environment: in the temp worktree, with a fresh home and only `PATH` passed through (`env -i PATH="$PATH" HOME=<tmp> …`), so no tokens or host logins reach the code. Block network where possible, and set time and memory limits. Running PR code is running someone else's code: ask first, and prefer a sandbox with no network. For a PR you didn't write, never run it without an explicit yes.
 
 ## Re-review
 
-Used for `🔍 Review new commits` in Discussion, and whenever earlier findings meet new code. It is not a fresh review:
+Used only for `🔍 Review new commits` in Discussion (moving up a tier is *deepening*, not a Re-review). It is not a fresh review of the whole PR:
 1. **Each earlier finding gets a verdict**, in order: ✅ addressed or ❌ not addressed, with `file:line` evidence. "Attempted" is not addressed: the specific defect must no longer be reachable. A partial fix is ❌, with what is still reachable.
-2. **New breakage:** problems the fix itself introduced, at the usual severities.
-3. **Out of scope:** anything noticed outside the fix diff is listed as non-blocking, never as a new finding round.
+2. **New code:** every new hunk in the new commits gets a normal review at the current tier and its usual severities, whether it's a fix, breakage the fix caused, or unrelated new work.
+3. **Out of scope:** issues noticed in code these commits didn't change are listed as non-blocking, never as a new finding round.

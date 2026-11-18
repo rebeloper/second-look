@@ -7,7 +7,7 @@ Screens for Local, PR review, and Self-review. Shared parts (tokens, comment lab
 ```
 ## 🔀 <PR title> · <#n on GitHub/Bitbucket, !n on GitLab>
 🧭 <Their PR | Your PR> · <reason> → <PR review | Self-review | Discussion>
-`<head>` → `<base>` · `@<author>` · <files> files · +<add> −<del> · <checks: ✅ passing | ❌ failing | ⏳ pending>
+`<head>` → `<base>` · `@<author>` · <files> files · +<add> −<del> · <checks: ✅ passing | ❌ failing | ⏳ pending> <· <n> generated or asset files skipped>
 
 > <one-line summary of what the PR does, in your words>
 ```
@@ -19,7 +19,7 @@ Local mode replaces the PR header with this header line:
 ```
 ## 🔍 Local changes · `<branch>`
 🧭 <reason> → Local
-<n> file(s) · +<add> −<del> · <uncommitted | staged | vs `<base>`> <· intent inferred, when there's no description>
+<n> file(s) · +<add> −<del> · <uncommitted | staged | vs `<base>`> <· intent inferred, when there's no description> <· <n> generated or asset files skipped>
 ```
 
 Then:
@@ -27,7 +27,8 @@ Then:
 ````
 > <⛔ **Not ready** | ⚠️ **Fix first** | ✅ **Ready**>: <n> blockers · <n> should fix · <n> nits
 > <1–2 sentences: why this verdict>
-🎚️ Tier <n> · <Diff Scan | Impact Review | Verified Review | Full Audit> · 🌡️ Risk <low | medium | high> <tier 2+: · ⏱️ Effort <1-5>/5>
+
+🎚️ Tier <n> · <Diff Scan | Impact Review | Verified Review | Full Audit> · 🌡️ Risk <low | medium | high> <tier 2+: · ⏱️ Effort <1-5>/5> <· self-authored · single-agent, when that applies> <· 🤖 <n> agents, when any were used>
 
 <tier 3+: **What it does**
 ```diff
@@ -52,11 +53,12 @@ Then:
 | 2 | 🟠 | `<file>:<line>` | <issue> | 6 ⚠️ |
 
 <if any were hidden: 🙈 <n> more below the tier's confidence bar · a higher tier (`🎚️ Change tier`) shows them>
+<if verifiers couldn't cover all findings: 🙈 <n> not independently verified (marked ⚠️)>
 
 **Looks good:** <one specific line on what is solid>
 ````
 
-Leave out the field table at tier 1, and any row that doesn't apply to the tier. At tier 3+, add after the table: **Failure modes** (a table: what · where · trigger · detected by), **Approach** when it applies, **Recommendations** (up to 3 bullets), **Declined to judge** (one line each, ending with `Name one to make it a finding.`), and **Split suggestion** when it applies. At tier 4, also add **Needs validation** (finding · the exact open question) and **Evidence** (what was run and the result). When verification was single-agent, say so on the tier line.
+At tier 1, the field table keeps only the 📋 Owner checks and 📏 House rules rows, and only when they have content. At every tier, leave out any row that doesn't apply. At tier 3+, add after the table: **Failure modes** (a table: what · where · trigger · detected by), **Approach** when it applies, **Recommendations** (up to 3 bullets), **Declined to judge** (one line each, ending with `Name one to make it a finding.`), and **Split suggestion** when it applies. At tier 4, also add **Needs validation** (finding · the exact open question) and **Evidence** (what was run and the result). When verification was single-agent, say so on the tier line.
 
 Number findings by severity: all 🔴 first, then 🟠, then 🟡. Within a severity, order by kind: security, then data loss, then crash or always-fails, then wrong result or a breaking API change, then a missed requirement, then everything else. Break ties by the earlier failure point (a crash on load comes before a crash on call), then by the larger blast radius. Mark unverified findings with ⚠️ in the Conf. column only, never in the Issue text. The overview has no finding details. Those come one at a time in the walkthrough.
 
@@ -70,7 +72,9 @@ If there are no findings, print only the header and `> ✅ **Ready**: nothing fo
 
 **Start menu** (after the overview). Title `Start`, question `How do you want to go through the <n> findings?`. `▶️ Walk through` is the recommended option (preview: the first card's title). `👋 Done` ends without changes. The `🔧 Fix all now` preview says how many fixes, which files, and which fixes will first ask for facts:
 Local, Self-review: `▶️ Walk through` · `🔧 Fix all now` · `🎚️ Change tier` · `👋 Done`
-PR review: `▶️ Walk through` · `🎚️ Change tier` · `🔒 Keep private`
+PR review: `▶️ Walk through` · `🔒 Keep private` · `🎚️ Change tier` · `👋 Done`
+
+`🔒 Keep private` walks through the cards with `📋 Copy` · `🗑️ Drop` · `⏹️ Stop here` only. Nothing is posted, and there is no Finish menu. `👋 Done` ends without posting anything.
 
 The `🎚️ Change tier` preview shows the current tier. Picking it opens the **Tier menu**.
 
@@ -100,7 +104,7 @@ Show one card at a time, then the finding menu. Wait for the answer before showi
 ---
 
 ### 🔴 <i>/<total> · <short title>
-`<file>:<line>` · <added | changed | removed> in this <PR | change> · confidence <n>/10 <tier 3+: · <✅ verified | ⚠️ needs validation: <open question>>>
+`<file>:<line>` · <added | changed | removed> in this <PR | change> · confidence <n>/10 <tier 3+: · <✅ verified | ⚠️ needs validation: <open question>>> <· 👥 already raised by `@<who>`, when an open thread covers it>
 
 <Code view of the hunk. In PR review mode, the comment box sits inside it, under the pinned line.>
 
@@ -108,7 +112,7 @@ Show one card at a time, then the finding menu. Wait for the answer before showi
 <House-rule finding: add `📏 <rule file>:<line> · "<rule, in a few words>"`.>
 <If the finding or its fix rests on something you could not check, end with `⚠️ Unverified: <assumption>` (e.g. the DB driver's placeholder syntax).>
 
-<Local mode:>
+<Local and Self-review:>
 **Fix**
 ```diff
 -<current line>
@@ -125,6 +129,8 @@ If no local diff fits (a missing file, or a change needed in callers elsewhere),
 **Finding menu.** Each option's preview shows exactly what will happen:
 Local: `🔧 Fix` (preview: the diff) · `⏭️ Skip` · `⏹️ Stop here`
 PR review: `📤 Post` (preview: the exact comment, with the suggestion as it will post) · `📋 Copy` · `🗑️ Drop` · `⏹️ Stop here`
+PR review, already raised (👥): `👍 Agree in their thread` (preview: the short reply, e.g. "+1, also seeing this") · `📋 Copy` · `🗑️ Drop` · `⏹️ Stop here`
+Self-review: same as Local.
 
 Recommend Fix or Post for 🔴 and 🟠. Don't recommend anything for 🟡. The `⏹️ Stop here` preview reads `Skips findings <i>–<total>`.
 
@@ -134,9 +140,4 @@ Act as soon as the user picks, confirm with one line, then show the next card:
 - 📋 Copy → see **Copy line** in `ui-kit.md`.
 - `Stop here` ends the walkthrough. The current finding and the rest count as skipped.
 
-**Undo:** undo only reaches back one action at a time.
-- After 📤 Post: delete that comment (host file). If the action also resolved a thread, unresolve it. Confirm with `↩️ Removed <file>:<line>`.
-- After 🔧 Fix (Local, Self-review): reverse exactly the lines that fix changed, and leave every other line in the file alone. Never run `git checkout`, `git restore`, or `git stash` on the file, because it holds the user's own uncommitted work. Confirm with `↩️ Reverted <file>:<line>`.
-- For the Discussion author flow, see `SKILL.md`.
-
-**Finish menu** (PR review only: after the last card, or right after the overview when there are no findings): `⛔ Request changes` · `💬 Comment` · `✅ Approve` · `👋 Leave as is`. Recommend `Request changes` if a 🔴 was posted, `Approve` if nothing was posted, otherwise `Comment`. Before the menu, print the review summary that will post with it, in full, as a blockquote under `**Review summary**`, so the user sees the exact text. This submits the overall verdict. The inline comments are already posted.
+**Undo** and the **Finish menu** are in `ui-kit.md`.

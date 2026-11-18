@@ -10,11 +10,21 @@ Works with **GitHub**, **GitLab**, and **Bitbucket Cloud**, and with any CLI tha
 
 ````
 ## 🔀 Cache user avatars on disk · #231
+🧭 Their PR · nothing waiting on you → PR review
 `feat/avatar-disk-cache` → `main` · `@dana` · 4 files · +96 −11 · ✅ passing
-🧭 Their PR · no replies waiting → PR review
 
-> ⛔ Not ready: 1 blocker · 2 should fix · 1 nit
+> Adds an on-disk avatar cache so profile images load instantly after relaunch.
+
+> ⛔ **Not ready**: 1 blocker · 2 should fix · 1 nit
+> Cache files collide across users, and logout leaves the previous user's avatars on disk.
+
 🎚️ Tier 2 · Impact Review · 🌡️ Risk high · ⏱️ Effort 2/5
+
+| | |
+|---|---|
+| 🚪 Merge danger | two-way door · blast radius: profile images |
+| 🧭 Impact | `UserSession.logout()` doesn't clear the new cache · ⚠️ 1 not updated |
+| 🧪 Tests | 🟡 partly: account switch isn't tested |
 
 | # |    | Where                  | Issue                                     | Conf. |
 |---|----|------------------------|-------------------------------------------|-------|
@@ -29,6 +39,7 @@ Then one finding at a time, with the comment pinned to its line the way your Git
 ```diff
 @@ -28,6 +28,14 @@ final class AvatarCache
     28   28 ┃     private let directory: URL
+    29   29 ┃
 +        30 ┃     func store(_ data: Data, for url: URL) throws {
 +        31 ┃         let file = directory.appendingPathComponent(url.lastPathComponent)
 +        32 ┃         try data.write(to: file, options: .atomic)
@@ -57,7 +68,7 @@ Second Look picks the mode from what you say and who wrote the PR. It shows its 
 |---|---|---|
 | No PR mentioned | **Local review** | a fix applied to your files |
 | Someone else's PR | **PR review** | a comment you post, copy, or drop |
-| Your PR, no comments yet | **Self-review** | a fix in your branch, nothing posted |
+| Your PR, nothing waiting on you | **Self-review** | a fix in your branch, nothing posted |
 | Any PR with threads waiting on you | **Discussion** | a reply, plus a fix commit if it's your PR |
 
 **Discussion** works from both sides:
@@ -106,7 +117,7 @@ npx skills add rebeloper/second-look -g
 
 This uses the open [skills](https://skills.sh) installer, which supports Claude Code, Codex, Cursor, and many more. It asks which agents to install for. Pick them up front with `-a`, e.g. `-a claude-code`. Leave out `-g` to install into the current project only.
 
-Update with `npx skills update second-look`, and remove with `npx skills remove second-look`.
+Update with `npx skills update -g second-look`, and remove with `npx skills remove -g second-look` (leave out `-g` for a project install).
 
 <details>
 <summary>Manual install</summary>
@@ -120,9 +131,9 @@ Link the skill folder into your CLI's skills directory:
 
 | CLI | Command |
 |---|---|
-| Claude Code | `ln -s "$PWD/skills/second-look" ~/.claude/skills/second-look` |
-| GitHub Copilot CLI | `ln -s "$PWD/skills/second-look" ~/.copilot/skills/second-look` |
-| CLIs that read `~/.agents/skills` | `ln -s "$PWD/skills/second-look" ~/.agents/skills/second-look` |
+| Claude Code | `mkdir -p ~/.claude/skills && ln -s "$PWD/skills/second-look" ~/.claude/skills/second-look` |
+| GitHub Copilot CLI | `mkdir -p ~/.copilot/skills && ln -s "$PWD/skills/second-look" ~/.copilot/skills/second-look` |
+| CLIs that read `~/.agents/skills` | `mkdir -p ~/.agents/skills && ln -s "$PWD/skills/second-look" ~/.agents/skills/second-look` |
 
 Pull the repo to update.
 
@@ -134,7 +145,7 @@ Pull the repo to update.
 - **GitHub:** [`gh`](https://cli.github.com), logged in with `gh auth login`
 - **GitLab:** [`glab`](https://gitlab.com/gitlab-org/cli), logged in with `glab auth login` (GitLab 17.2+)
 - **Bitbucket Cloud:** `curl`, plus an Atlassian API token set in your shell as `BITBUCKET_EMAIL` and `BITBUCKET_API_TOKEN`
-- `python3` (used for a few helper steps)
+- `python3` or `jq`, to build JSON bodies safely (GitLab and Bitbucket)
 
 ## Usage
 
@@ -148,7 +159,7 @@ go through the comments on my PR 231
 
 ## Safety
 
-- Nothing reaches your Git host until you pick **Post** or **Reply** on a card that shows the exact text. Type `undo` to remove your last post.
+- Nothing reaches your Git host until you pick an action (Post, Reply, Accept, Agree, a verdict, or Push & send) on a card or screen that shows the exact text. Type `undo` to remove your last post, where the host allows it.
 - Reviews never change your checkout. Fixes stay local unless you ask to commit, or, in Discussion mode on your own PR, until you choose **Push & send**.
 - It never force-pushes. It runs someone else's PR code only with your explicit OK.
 

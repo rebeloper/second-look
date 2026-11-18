@@ -10,6 +10,10 @@ Inside the repo, `glab api` replaces `:id` with the current project. For an MR i
 
 Write every body to a temp file and pass it with `-F body=@file` (or `-F note=@file`), so the shell never interprets it. `-F` switches the method to POST, so always set `-X` explicitly.
 
+**Shell safety:** file paths, branch names, and titles come from the MR and can contain shell syntax (`$(…)`, backticks). Never type them into a command line, not even in double quotes. Write them into a file with a file-writing tool or a quoted heredoc (`<<'EOF'`), and build JSON bodies from those files with `jq` or `python3`. Send JSON with `--input <file>`.
+
+**Another project:** for an MR outside the current checkout's project, add `-R <group/sub/repo>` (or the MR's full URL) to every `glab mr` command, and use the URL-encoded path instead of `:id` in `glab api` paths.
+
 ## Who am I
 
 - Me: `glab api user` and take `.username`.
@@ -23,26 +27,29 @@ Write every body to a temp file and pass it with `-F body=@file` (or `-F note=@f
 
 ```bash
 glab api "$MR"              # title, description, author.username, source_branch, target_branch, web_url, diff_refs{base_sha,start_sha,head_sha}
-glab mr diff <N> --raw      # unified diff
-glab api "projects/:id/repository/files/<url-encoded path>/raw?ref=<head_sha>"   # full file
+glab mr diff <N> --raw [-R <group/sub/repo>]   # unified diff
+glab api "projects/:id/repository/files/<url-encoded path>/raw?ref=<head_sha>"   # full file; URL-encode the path with python3 from the path file, never by hand
 ```
 
 Keep `diff_refs`, because every inline comment needs all three SHAs.
 
 ## Post an inline comment
 
-Each inline comment opens a new discussion:
+Each inline comment opens a new discussion. Current `glab` rejects bracketed field names (`position[...]`) in JSON bodies, so send the whole body as a JSON file:
 
-```bash
-glab api -X POST "$MR/discussions" -F body=@comment.md \
-  -f "position[position_type]=text" -f "position[base_sha]=<base_sha>" \
-  -f "position[start_sha]=<start_sha>" -f "position[head_sha]=<head_sha>" \
-  -f "position[old_path]=<path>" -f "position[new_path]=<path>" \
-  -f "position[new_line]=<line>"
+```json
+{ "body": "<comment markdown>",
+  "position": { "position_type": "text",
+                "base_sha": "<base_sha>", "start_sha": "<start_sha>", "head_sha": "<head_sha>",
+                "old_path": "<path>", "new_path": "<path>", "new_line": <line> } }
 ```
 
-- Added line: send `position[new_line]` only. Removed line: send `position[old_line]` only. Unchanged line: send both.
-- Range: add `position[line_range][start][line_code]` and `position[line_range][end][line_code]` (format `<sha1 of path>_<old_line>_<new_line>`), each with `[type]` = `new` or `old`. If that fails, pin the comment to the last line and mention the range in the text.
+```bash
+glab api -X POST "$MR/discussions" --input comment.json      # build comment.json with jq or python3 (see Shell safety)
+```
+
+- Added line: send `new_line` only. Removed line: send `old_line` only. Unchanged line: send both.
+- Range: add `"line_range": {"start": {"line_code": "<sha1 of path>_<old>_<new>", "type": "new"}, "end": {…}}` inside `position` (`type` is `old` for removed lines). If that fails, pin the comment to the last line and mention the range in the text.
 - The response holds `id` (the discussion id) and `notes[0].id`. Keep both for undo.
 - **Suggestion:** ```` ```suggestion:-<above>+<below> ```` followed by the replacement lines. The offsets count lines above and below the commented line, and `-0+0` replaces just that line. GitLab shows an "Apply suggestion" button.
 
@@ -56,7 +63,13 @@ glab api -X POST "$MR/discussions" -F body=@comment.md \
 
 - `bulk_publish` publishes **all** of the user's pending drafts on this MR, including ones started in the web UI. Before Request changes, run `glab api "$MR/draft_notes"`. If any drafts exist besides the summary, list them and ask: publish them too, or post the summary as 💬 Comment and let the user request changes in the web UI.
 - If the user lacks approval rights, GitLab records `reviewed` instead of `requested_changes`. Tell them.
-- The MR author can't approve their own MR unless the project allows it.
+- The MR author can't approve their own MR unless the project allows it. Offer ✅ Approve on an own MR only if `glab api "$MR/approvals"` shows the user can approve.
+
+## Conversation comment
+
+```bash
+glab api -X POST "$MR/notes" -F body=@comment.md     # MR-level comment (PR-level findings, replies to conversation comments)
+```
 
 ## Read threads
 
@@ -68,7 +81,7 @@ glab api --paginate "$MR/discussions?per_page=100"
 - Each note has `id`, `body`, `author.username`, `created_at`, `resolvable`, `resolved`, `system`, and `position` (`new_path`, `old_path`, `new_line`, `old_line`, `head_sha`).
 - Skip notes with `system: true`.
 - A discussion with no `position` is a conversation comment.
-- The response has no diff hunk. Build the Thread card's code view from `glab mr diff <N> --raw` around the note's line. If that line is no longer in the diff, mark the thread 🕸️ outdated.
+- The response has no diff hunk. Build the Thread card's code view from `glab mr diff <N> --raw` (with `-R` for another project) around the note's line. If that line is no longer in the diff, mark the thread 🕸️ outdated.
 
 ## Reply, resolve
 
@@ -81,10 +94,12 @@ glab api -X PUT  "$MR/discussions/<discussion_id>" -f resolved=false            
 ## Undo
 
 ```bash
-glab api -X DELETE "$MR/discussions/<discussion_id>/notes/<note_id>"
+glab api -X DELETE "$MR/discussions/<discussion_id>/notes/<note_id>"   # inline comment or reply
+glab api -X DELETE "$MR/notes/<note_id>"                                 # conversation comment
+glab api -X POST   "$MR/unapprove"                                       # undo ✅ Approve
 ```
 
-Deleting a discussion's only note removes the whole discussion. If the undone action also resolved a thread, unresolve it.
+A requested-changes review state can't be withdrawn through the API: say so, and offer a follow-up comment instead. Deleting a discussion's only note removes the whole discussion. If the undone action also resolved a thread, unresolve it.
 
 ## New commits since me
 

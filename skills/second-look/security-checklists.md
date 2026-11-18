@@ -20,7 +20,7 @@ Read a section only when the diff touches its area (tier 2: inside the C bug hun
 - Are redirect or navigation targets taken from the URL, query, or storage restricted by scheme and host?
 - Does a deep merge with user-controlled keys allow prototype pollution, and is there a gadget that makes it matter?
 - Do service-worker or cache keys include the user's identity, and are they cleared on logout?
-- Does credentialed CORS reflect the request's `Origin`?
+- Does credentialed CORS reflect an unvalidated `Origin`, or allow `null`?
 - Can a new state-changing screen be framed by another site?
 
 ## Auth and sessions
@@ -44,6 +44,15 @@ Read a section only when the diff touches its area (tier 2: inside the C bug hun
 - Do migrations backfill tenant and access fields, and is rollback safe?
 - Do signed URLs bind the operation, object, expiry, and tenant?
 - Do new log or analytics fields stay free of private content?
+
+## Server input and backend
+
+- Can a user-supplied URL make the server fetch internal addresses (SSRF), including through redirects and DNS rebinding?
+- Do user-supplied file names or paths reach the filesystem without normalizing them and checking they stay inside the allowed folder?
+- Do uploads check type, size, and content, and are they stored outside the web root with random names?
+- Do new SQL, shell, template, or LDAP calls build strings from user input instead of using parameters?
+- Do XML parsers or deserializers accept external entities, or arbitrary types from untrusted input?
+- Do new endpoints rate-limit expensive or enumerable operations (login, reset, search, export)?
 
 ## Supply chain and CI
 

@@ -20,7 +20,7 @@ This file holds the parts every mode uses. Reviews (Local, PR review, Self-revie
 Every comment and reply that gets posted or copied starts with a label line in the Conventional Comments format:
 
 ```
-**<label> (<decoration>):** <subject>
+**<label>[ (<decoration>)]:** <subject>
 
 <discussion>
 ```
@@ -112,9 +112,20 @@ Copy the exact text that would have been posted, including any suggestion in the
 - Link: from the host file's **Line link** section.
 - In Discussion mode, copy the reply and link to the thread's comment URL instead.
 
+## Undo and Finish menu
+
+**Undo:** undo only reaches back one action at a time.
+- After 📤 Post: delete that comment (host file). If the action also resolved a thread, unresolve it. Confirm with `↩️ Removed <file>:<line>`.
+- After 🔧 Fix (Local, Self-review): reverse exactly the lines that fix changed, and leave every other line in the file alone. Never run `git checkout`, `git restore`, or `git stash` on the file, because it holds the user's own uncommitted work. Confirm with `↩️ Reverted <file>:<line>`.
+- After 💬 Reply or ✔️ Accept (Discussion, reviewer side): delete the reply (host file), and unresolve the thread if the action resolved it.
+- After a verdict: use the host file's verdict undo. Where the host can't undo it (a GitHub review), say so and offer a follow-up comment.
+- For the Discussion author flow, see `SKILL.md`.
+
+**Finish menu** (PR review: after the last card, or right after the overview when there are no findings. Discussion as reviewer: after a Re-review): `⛔ Request changes` · `💬 Comment` · `✅ Approve` · `👋 Leave as is`. Recommend from the findings, not from what was posted: `Request changes` if any 🔴 is still open, `Approve` only if there are no 🔴 or 🟠, otherwise `Comment`. Before the menu, print the review summary that will post with it, in full, as a blockquote under `**Review summary**`, so the user sees the exact text. This submits the overall verdict. The inline comments are already posted.
+
 ## Done card
 
-If nothing was fixed, posted, or copied, skip the card and print one line: `👋 Nothing changed.`
+If nothing was fixed, committed, posted, copied, replied, or resolved, skip the card and print one line: `👋 Nothing changed.`
 
 ```
 ---
@@ -122,6 +133,7 @@ If nothing was fixed, posted, or copied, skip the card and print one line: `👋
 <🔧 n fixed> · <📦 n committed> · <🚀 pushed> · <📤 n posted> · <📋 n copied> · <💬 n replied> · <✔️ n resolved> · <⏭️ n skipped>
 <Leave out any count that is 0 or doesn't apply to the mode.>
 <URL(s) if posted>
+<Notes, one per line, when they apply: fixes merged or dropped by Fix all, fixes skipped for missing facts, `📦 stash restored on <branch>`, `💾 queue saved`.>
 
-<If files changed: "Changes are uncommitted: `git diff` to see them.">
+<Ending: Local → "Changes are uncommitted: `git diff` to see them." · Self-review → "Changes are uncommitted. Commit and push when ready." · Discussion author → the push and send result.>
 ```

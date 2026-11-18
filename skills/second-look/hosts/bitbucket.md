@@ -4,20 +4,18 @@ Bitbucket has no official CLI, so these calls go through `curl`. This file cover
 
 ## Setup
 
-- **Credentials:** the user needs an Atlassian API token with scopes for reading repositories and for reading and writing pull requests. Ask them to export the email and token in their own shell, never to paste them into the chat:
-  ```bash
-  export BITBUCKET_EMAIL=<atlassian account email>
-  export BITBUCKET_API_TOKEN=<token>
-  ```
-  If either variable is missing, stop and ask for it.
-- **Never print, log, or echo the token.** The helper passes it to curl on stdin (`-K -`) through the shell's built-in `printf`, so it never appears in the process list.
+- **Credentials:** the user needs an Atlassian API token with scopes for reading repositories, reading and writing pull requests, and reading their user account (`read:user:bitbucket`, needed for **Who am I**). The agent's shell doesn't see variables exported in another terminal, so the credentials live in a private file. Ask the user to create `~/.config/second-look/bitbucket` in their editor (never paste it into the chat), with the email on line 1 and the token on line 2, then run `chmod 600 ~/.config/second-look/bitbucket`. If the file is missing or unreadable, stop and ask for it. If `BITBUCKET_EMAIL` and `BITBUCKET_API_TOKEN` are set in the agent's own environment, they may be used instead.
+- **Never print, log, or echo the token.** The helper reads it from the file and passes it to curl on stdin (`-K -`) through the shell's built-in `printf`, so it never appears in the process list or the command line.
 - **Base URL:** `BB=https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests/<N>`. Read `<workspace>/<repo>` from the remote URL or the PR URL.
 - **Request helper:**
   ```bash
-  bb() { printf 'user = "%s:%s"\n' "$BITBUCKET_EMAIL" "$BITBUCKET_API_TOKEN" \
+  bb() { local e t; { read -r e; read -r t; } < "$HOME/.config/second-look/bitbucket"
+         printf 'user = "%s:%s"\n' "${BITBUCKET_EMAIL:-$e}" "${BITBUCKET_API_TOKEN:-$t}" \
            | curl -sS --fail-with-body -K - -H 'Content-Type: application/json' "$@"; }
   ```
+  Each shell command starts fresh, so define `bb` in every command that uses it.
 - **Bodies:** build each JSON body in a temp file with `python3 -c 'import json,sys; ...'` or `jq`, and send it with `--data @file`. Never splice text into JSON by hand.
+- **Shell safety:** file paths, branch names, and titles come from the PR and can contain shell syntax (`$(…)`, backticks). Never type them into a command line, not even in double quotes or inside a URL. Write them into a file first, and build URLs and JSON from that file with `python3` (percent-encoding paths in URLs).
 
 ## Who am I
 
@@ -34,7 +32,7 @@ Bitbucket has no official CLI, so these calls go through `curl`. This file cover
 bb "$BB"                 # title, description, author.display_name, source.branch.name, destination.branch.name,
                          # source.commit.hash, destination.commit.hash, links.html.href
 bb -L "$BB/diff"         # unified diff (redirects, so -L is needed)
-bb -L "https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/src/<source hash>/<path>"   # full file
+bb -L "$(python3 -c 'import sys,urllib.parse;print("https://api.bitbucket.org/2.0/repositories/"+sys.argv[1]+"/src/"+sys.argv[2]+"/"+urllib.parse.quote(open(sys.argv[3]).read().strip()))' <workspace>/<repo> <source hash> path.txt)"   # full file; the path comes from path.txt
 ```
 
 Bitbucket shows usernames as display names. Use `author.nickname` if it's there, otherwise `display_name`.
@@ -64,6 +62,12 @@ bb -X POST "$BB/comments" --data @comment.json     # keep .id and .links.html.hr
 
 The PR author can't approve or request changes on their own PR. Offer only 💬 Comment.
 
+## Conversation comment
+
+```bash
+bb -X POST "$BB/comments" --data @comment.json     # {"content":{"raw":"..."}}, no `inline`: PR-level findings and replies to conversation comments
+```
+
 ## Read threads
 
 ```bash
@@ -87,7 +91,9 @@ bb -X DELETE "$BB/comments/<root id>/resolve"         # reopen thread
 ## Undo
 
 ```bash
-bb -X DELETE "$BB/comments/<id>"
+bb -X DELETE "$BB/comments/<id>"            # comment or reply
+bb -X DELETE "$BB/approve"                  # undo ✅ Approve
+bb -X DELETE "$BB/request-changes"          # undo ⛔ Request changes
 ```
 
 If the undone action also resolved a thread, reopen it.
@@ -95,10 +101,10 @@ If the undone action also resolved a thread, reopen it.
 ## New commits since me
 
 ```bash
-bb "$BB/commits"            # newest first, each with .hash and .date
+bb "$BB/commits?pagelen=50"   # newest first, each with .hash and .date; follow .next until it is absent
 ```
 
-`OLD` is the newest commit dated before my last comment. Then get the diff. Bitbucket orders the range as **new first**, the reverse of `git diff`:
+`OLD` is the newest commit dated before my last comment. Commit dates can mislead after a rebase or with commits authored earlier: if `OLD` isn't an ancestor of the source hash, or the dates look out of order, say so and offer a full review instead. Then get the diff. Bitbucket orders the range as **new first**, the reverse of `git diff`:
 
 ```bash
 bb -L "https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/diff/<source hash>..$OLD?topic=false"
